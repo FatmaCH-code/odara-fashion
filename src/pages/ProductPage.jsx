@@ -1,0 +1,78 @@
+import { useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { useCartStore } from '../store/cartStore'
+import { allProducts } from '../data/products'
+
+export default function ProductPage() {
+  const { id } = useParams()
+  const [quantity, setQuantity] = useState(1)
+  const addToCart = useCartStore(state => state.addItem)
+
+  const product = allProducts.find(p => p.id === parseInt(id)) || allProducts[0]
+
+  const handleAddToCart = () => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity
+    })
+    alert('Added to cart!')
+  }
+
+  return (
+    <div>
+      <div className="section-premium">
+        <div className="container-premium">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {/* Image */}
+            <div className="product-image-wrapper" style={{ paddingTop: '110%' }}>
+              <img src={product.image} alt={product.name} className="product-image-photo" />
+            </div>
+
+            {/* Details */}
+            <div>
+              <p className="product-category-label">{product.category}</p>
+              <h1 className="text-4xl font-playfair text-2C2C2C mb-4">{product.name}</h1>
+              <p className="text-3xl text-C9A876 font-semibold mb-6">${product.price}</p>
+              
+              <p className="text-lg text-2C2C2C/70 mb-8">{product.description}</p>
+
+              <div className="mb-8">
+                <label className="block text-sm uppercase tracking-widest font-semibold mb-4">Quantity</label>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-6 py-3 border border-E8D9C4 text-2C2C2C hover:bg-F5EFE0"
+                  >
+                    -
+                  </button>
+                  <span className="text-2xl font-semibold w-12 text-center">{quantity}</span>
+                  <button 
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-6 py-3 border border-E8D9C4 text-2C2C2C hover:bg-F5EFE0"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <button onClick={handleAddToCart} className="btn-gold w-full mb-4">Add to Cart</button>
+              <button className="btn-outline w-full">Wishlist</button>
+
+              <div className="mt-12 pt-8 border-t border-E8D9C4">
+                <h3 className="font-playfair text-xl mb-4">Product Details</h3>
+                <ul className="space-y-2 text-sm text-2C2C2C/70">
+                  <li>• Premium materials</li>
+                  <li>• Made to last</li>
+                  <li>• Sustainable sourcing</li>
+                  <li>• Free returns within 30 days</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
