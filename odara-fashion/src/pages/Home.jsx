@@ -2,7 +2,15 @@ import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import heroImage from '../assets/hero-traditional-dress.jpg'
 import odaraEmblem from '../assets/odara-emblem.png'
-import { fashionProducts, perfumeProducts, oilProducts } from '../data/products'
+import { embroideryProducts, kaftanProducts, jacketProducts, hijabProducts, perfumeProducts, oilProducts } from '../data/products'
+
+// A curated mix (2 from each fashion category) for the homepage teaser
+const fashionPreview = [
+  ...embroideryProducts.slice(0, 2),
+  ...kaftanProducts.slice(0, 2),
+  ...jacketProducts.slice(0, 2),
+  ...hijabProducts.slice(0, 2),
+]
 
 export default function Home() {
   return (
@@ -52,7 +60,7 @@ export default function Home() {
         <div className="container-premium">
           <h2 className="section-title">Fashion</h2>
           <div className="collections-grid">
-            {fashionProducts.slice(0, 8).map(product => (
+            {fashionPreview.map(product => (
               <ProductCard key={product.id} product={product} isSale={product.isSale} isNew={product.isNew} />
             ))}
           </div>
@@ -83,7 +91,7 @@ export default function Home() {
       {/* Oils Section */}
       <section className="section-premium">
         <div className="container-premium">
-          <h2 className="section-title">Essential Oils</h2>
+          <h2 className="section-title">Perfumery Oils</h2>
           <p className="text-center text-lg text-2C2C2C/70 mb-8 max-w-xl mx-auto">
             Pure, luxurious oil blends for your personal collection
           </p>

@@ -34,7 +34,12 @@ export default function ProductPage() {
             <div>
               <p className="product-category-label">{product.category}</p>
               <h1 className="text-4xl font-playfair text-2C2C2C mb-4">{product.name}</h1>
-              <p className="text-3xl text-C9A876 font-semibold mb-6">${product.price}</p>
+              <p className="text-3xl text-C9A876 font-semibold mb-6">
+                ${product.price}
+                {product.originalPrice && (
+                  <span className="ml-3 text-xl line-through text-2C2C2C/40">${product.originalPrice}</span>
+                )}
+              </p>
               
               <p className="text-lg text-2C2C2C/70 mb-8">{product.description}</p>
 

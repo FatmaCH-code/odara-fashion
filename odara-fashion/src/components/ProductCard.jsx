@@ -20,7 +20,12 @@ export default function ProductCard({ product, isSale, isNew }) {
         <div className="product-info-premium">
           <p className="product-category-label">{product.category}</p>
           <h3 className="product-name-premium">{product.name}</h3>
-          <p className="product-price-premium">${product.price}</p>
+          <p className="product-price-premium">
+            ${product.price}
+            {product.originalPrice && (
+              <span className="ml-2 text-sm line-through text-2C2C2C/40">${product.originalPrice}</span>
+            )}
+          </p>
         </div>
       </div>
     </Link>

@@ -33,7 +33,7 @@ export default function Footer() {
             <ul>
               <li><Link to="/shop">Fashion</Link></li>
               <li><Link to="/perfumes">Fragrances</Link></li>
-              <li><Link to="/perfumes">Essential Oils</Link></li>
+              <li><Link to="/perfumes">Perfumery Oils</Link></li>
               <li><Link to="/make-perfume">Create Your Scent</Link></li>
             </ul>
           </div>

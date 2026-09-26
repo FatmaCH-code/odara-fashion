@@ -3,7 +3,7 @@ import ProductCard from '../components/ProductCard'
 import { Link } from 'react-router-dom'
 import { perfumeProducts, oilProducts } from '../data/products'
 
-const perfumeAndOilProducts = [...perfumeProducts, ...oilProducts.map(o => ({ ...o, category: 'Essential Oils' }))]
+const perfumeAndOilProducts = [...perfumeProducts, ...oilProducts]
 
 export default function Perfumes() {
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -19,7 +19,7 @@ export default function Perfumes() {
       {/* Header */}
       <div className="bg-F5EFE0 py-12">
         <div className="container-premium">
-          <h1 className="text-5xl font-playfair text-2C2C2C mb-4">Fragrances & Oils</h1>
+          <h1 className="text-5xl font-playfair text-2C2C2C mb-4">Fragrances & Perfumery Oils</h1>
           <p className="text-lg text-2C2C2C/70">Luxury scents from around the world</p>
         </div>
       </div>
