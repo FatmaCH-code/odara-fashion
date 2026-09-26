@@ -1,0 +1,50 @@
+-- Categories Table
+CREATE TABLE IF NOT EXISTS categories (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Products Table
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  category VARCHAR(255) NOT NULL,
+  image_url VARCHAR(255),
+  stock INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Orders Table
+CREATE TABLE IF NOT EXISTS orders (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  order_number VARCHAR(50) UNIQUE,
+  customer_email VARCHAR(255),
+  customer_name VARCHAR(255),
+  total_amount DECIMAL(10, 2),
+  status VARCHAR(50) DEFAULT 'pending',
+  shipping_address TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Cart Items Table
+CREATE TABLE IF NOT EXISTS cart_items (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
+  product_id BIGINT REFERENCES products(id),
+  quantity INT NOT NULL,
+  price DECIMAL(10, 2),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Testimonials Table
+CREATE TABLE IF NOT EXISTS testimonials (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name VARCHAR(255),
+  message TEXT,
+  rating INT CHECK (rating >= 1 AND rating <= 5),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
