@@ -47,7 +47,7 @@ export default function Perfumes() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div key={categoryFilter} className="products-grid-fade grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
             {filtered.map(product => (
               <ProductCard key={product.id} product={product} isNew={product.isNew} isSale={product.isSale} />
             ))}

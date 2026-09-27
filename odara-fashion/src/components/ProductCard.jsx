@@ -26,6 +26,18 @@ export default function ProductCard({ product, isSale, isNew }) {
               <span className="ml-2 text-sm line-through text-2C2C2C/40">${product.originalPrice}</span>
             )}
           </p>
+          {product.colors && product.colors.length > 0 && (
+            <div className="product-colors">
+              {product.colors.map((c) => (
+                <span
+                  key={c.name}
+                  className="product-color-dot"
+                  style={{ backgroundColor: c.hex }}
+                  title={c.name}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Link>

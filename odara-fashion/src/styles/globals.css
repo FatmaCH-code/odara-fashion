@@ -231,10 +231,18 @@ button {
 /* Collections Grid - Pinterest Masonry Style */
 .collections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin: 4rem 0;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  margin: 2.5rem 0;
   auto-rows: max-content;
+}
+
+@media (min-width: 640px) {
+  .collections-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin: 4rem 0;
+  }
 }
 
 @media (min-width: 768px) {
@@ -251,13 +259,16 @@ button {
   }
 }
 
-/* Masonry item heights - creates Pinterest effect */
-.collections-grid > :nth-child(3n) {
-  grid-row: span 1.2;
-}
+/* Masonry item heights - creates Pinterest effect (desktop/tablet only;
+   kept uniform on phones so the 2-column grid stays neat) */
+@media (min-width: 640px) {
+  .collections-grid > :nth-child(3n) {
+    grid-row: span 1.2;
+  }
 
-.collections-grid > :nth-child(4n) {
-  grid-row: span 0.9;
+  .collections-grid > :nth-child(4n) {
+    grid-row: span 0.9;
+  }
 }
 
 /* Product Card Premium */
@@ -285,17 +296,19 @@ button {
   transition: all 0.4s ease;
 }
 
-/* Varied heights for Pinterest effect */
-.collections-grid > :nth-child(3n) .product-image-wrapper {
-  padding-top: 120%;
-}
+/* Varied heights for Pinterest effect (tablet/desktop only) */
+@media (min-width: 640px) {
+  .collections-grid > :nth-child(3n) .product-image-wrapper {
+    padding-top: 120%;
+  }
 
-.collections-grid > :nth-child(4n) .product-image-wrapper {
-  padding-top: 85%;
-}
+  .collections-grid > :nth-child(4n) .product-image-wrapper {
+    padding-top: 85%;
+  }
 
-.collections-grid > :nth-child(5n) .product-image-wrapper {
-  padding-top: 110%;
+  .collections-grid > :nth-child(5n) .product-image-wrapper {
+    padding-top: 110%;
+  }
 }
 
 .product-image {
@@ -350,6 +363,51 @@ button {
   font-size: 15px;
   color: #C9A876;
   font-weight: 600;
+}
+
+@media (max-width: 639px) {
+  .product-info-premium {
+    padding: 0.75rem;
+  }
+  .product-category-label {
+    font-size: 9px;
+    margin-bottom: 0.3rem;
+  }
+  .product-name-premium {
+    font-size: 13px;
+    margin-bottom: 0.3rem;
+    line-height: 1.3;
+  }
+  .product-price-premium {
+    font-size: 13px;
+  }
+}
+
+/* Color swatches on product cards */
+.product-colors {
+  display: flex;
+  gap: 6px;
+  margin-top: 0.5rem;
+}
+
+.product-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.6) inset;
+}
+
+@media (max-width: 639px) {
+  .product-color-dot {
+    width: 11px;
+    height: 11px;
+  }
+}
+
+/* Smooth fade instead of an abrupt cut when a filter changes the grid */
+.products-grid-fade {
+  animation: fadeIn 0.35s ease;
 }
 
 /* Section Header */
@@ -701,9 +759,5 @@ footer li {
 
   .hero-premium {
     min-height: 50vh;
-  }
-
-  .collections-grid {
-    grid-template-columns: 1fr;
   }
 }

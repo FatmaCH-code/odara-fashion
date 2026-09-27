@@ -43,6 +43,30 @@ export default function ProductPage() {
               
               <p className="text-lg text-2C2C2C/70 mb-8">{product.description}</p>
 
+              {product.colors && product.colors.length > 0 && (
+                <div className="mb-8">
+                  <label className="block text-sm uppercase tracking-widest font-semibold mb-4">
+                    Color{product.colors.length > 1 ? 's' : ''} available
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {product.colors.map((c, i) => (
+                      <span
+                        key={c.name}
+                        className="product-color-dot"
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          cursor: 'pointer',
+                          boxShadow: i === 0 ? '0 0 0 2px #C9A876' : undefined,
+                          backgroundColor: c.hex,
+                        }}
+                        title={c.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="mb-8">
                 <label className="block text-sm uppercase tracking-widest font-semibold mb-4">Quantity</label>
                 <div className="flex items-center gap-4">

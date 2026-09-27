@@ -69,7 +69,7 @@ export default function Shop() {
 
             {/* Products */}
             <div className="md:col-span-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div key={categoryFilter} className="products-grid-fade grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                 {sorted.map(product => (
                   <ProductCard key={product.id} product={product} isSale={product.isSale} isNew={product.isNew} />
                 ))}
