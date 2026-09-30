@@ -90,3 +90,21 @@ export async function adminUploadProductImage(file) {
   const { data } = supabase.storage.from('product-images').getPublicUrl(path)
   return data.publicUrl
 }
+
+// ---- Team / admin access management ----
+// Lets a signed-in admin see every account and grant/revoke admin access to
+// others, without ever touching SQL. Only works for accounts that have
+// already signed in at least once (so a profiles row exists for them).
+
+export async function adminListProfiles() {
+  if (!isSupabaseConfigured) throw new Error('Supabase is not configured yet — see SETUP.md.')
+  const { data, error } = await supabase.from('profiles').select('*').order('created_at')
+  if (error) throw error
+  return data
+}
+
+export async function adminSetIsAdmin(id, isAdmin) {
+  if (!isSupabaseConfigured) throw new Error('Supabase is not configured yet — see SETUP.md.')
+  const { error } = await supabase.from('profiles').update({ is_admin: isAdmin }).eq('id', id)
+  if (error) throw error
+}

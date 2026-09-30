@@ -35,7 +35,8 @@ export default function CheckoutPage() {
       clearCart()
       navigate('/order-success', { state: { orderNumber: order?.order_number } })
     } catch (err) {
-      setError('Something went wrong placing your order. Please try again.')
+      console.error('Order creation failed:', err)
+      setError(`Something went wrong placing your order: ${err.message || 'please try again.'}`)
       setSubmitting(false)
     }
   }

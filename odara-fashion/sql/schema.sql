@@ -172,6 +172,12 @@ CREATE POLICY "Admins can read all profiles" ON profiles
     EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.is_admin = true)
   );
 
+DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
+CREATE POLICY "Admins can update any profile" ON profiles
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.is_admin = true)
+  );
+
 DROP POLICY IF EXISTS "Public can read testimonials" ON testimonials;
 CREATE POLICY "Public can read testimonials" ON testimonials
   FOR SELECT USING (true);

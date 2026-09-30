@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Plus, Pencil, Trash2, ExternalLink } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Mail, Users, LogOut, Plus, Pencil, Trash2, ExternalLink, Menu, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { adminListProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct } from '../services/products'
 import StatsOverview from '../components/admin/StatsOverview'
 import ProductForm from '../components/admin/ProductForm'
 import OrdersPanel from '../components/admin/OrdersPanel'
 import SubscribersPanel from '../components/admin/SubscribersPanel'
+import TeamPanel from '../components/admin/TeamPanel'
 import odaraEmblem from '../assets/odara-emblem.png'
 
 export default function AdminDashboard() {
@@ -17,6 +18,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState('')
   const [editingProduct, setEditingProduct] = useState(null) // null = closed, {} = new, {...} = editing
   const [deletingId, setDeletingId] = useState(null)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -33,6 +35,11 @@ export default function AdminDashboard() {
   useEffect(() => { load() }, [])
 
   const categories = [...new Set(products.map(p => p.category))].sort()
+
+  const goToTab = (t) => {
+    setTab(t)
+    setMobileNavOpen(false)
+  }
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -62,24 +69,46 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-brand">
-          <img src={odaraEmblem} alt="Odara" className="w-9 h-9 rounded-full" />
-          <span className="font-playfair text-lg">Odara Admin</span>
+      {/* Mobile-only top bar with hamburger toggle — the sidebar below is
+          off-screen by default on narrow viewports, this is the only way in. */}
+      <div className="admin-mobile-topbar">
+        <div className="flex items-center gap-2">
+          <img src={odaraEmblem} alt="Odara" className="w-7 h-7 rounded-full" />
+          <span className="font-playfair text-base">Odara Admin</span>
+        </div>
+        <button className="admin-icon-btn" onClick={() => setMobileNavOpen(true)} aria-label="Open menu">
+          <Menu className="w-5 h-5" />
+        </button>
+      </div>
+
+      {mobileNavOpen && <div className="admin-sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />}
+
+      <aside className={`admin-sidebar ${mobileNavOpen ? 'is-open' : ''}`}>
+        <div className="flex items-center justify-between">
+          <div className="admin-sidebar-brand">
+            <img src={odaraEmblem} alt="Odara" className="w-9 h-9 rounded-full" />
+            <span className="font-playfair text-lg">Odara Admin</span>
+          </div>
+          <button className="admin-icon-btn admin-sidebar-close" onClick={() => setMobileNavOpen(false)} aria-label="Close menu">
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <nav className="admin-nav">
-          <button className={`admin-nav-item ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')}>
+          <button className={`admin-nav-item ${tab === 'overview' ? 'active' : ''}`} onClick={() => goToTab('overview')}>
             <LayoutDashboard className="w-4 h-4" /> Overview
           </button>
-          <button className={`admin-nav-item ${tab === 'products' ? 'active' : ''}`} onClick={() => setTab('products')}>
+          <button className={`admin-nav-item ${tab === 'products' ? 'active' : ''}`} onClick={() => goToTab('products')}>
             <Package className="w-4 h-4" /> Products
           </button>
-          <button className={`admin-nav-item ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>
+          <button className={`admin-nav-item ${tab === 'orders' ? 'active' : ''}`} onClick={() => goToTab('orders')}>
             <ShoppingBag className="w-4 h-4" /> Orders
           </button>
-          <button className={`admin-nav-item ${tab === 'subscribers' ? 'active' : ''}`} onClick={() => setTab('subscribers')}>
+          <button className={`admin-nav-item ${tab === 'subscribers' ? 'active' : ''}`} onClick={() => goToTab('subscribers')}>
             <Mail className="w-4 h-4" /> Subscribers
+          </button>
+          <button className={`admin-nav-item ${tab === 'team' ? 'active' : ''}`} onClick={() => goToTab('team')}>
+            <Users className="w-4 h-4" /> Team
           </button>
         </nav>
 
@@ -109,6 +138,8 @@ export default function AdminDashboard() {
           <OrdersPanel />
         ) : tab === 'subscribers' ? (
           <SubscribersPanel />
+        ) : tab === 'team' ? (
+          <TeamPanel />
         ) : (
           <>
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">

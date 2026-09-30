@@ -11,7 +11,7 @@ export default function AdminGuard({ children }) {
   if (loading) {
     return (
       <div className="admin-shell flex items-center justify-center min-h-screen">
-        <p className="text-white/50">Loading…</p>
+        <p className="text-2C2C2C/50">Loading…</p>
       </div>
     )
   }
