@@ -1,8 +1,18 @@
 // Central product catalog for Odara Fashion
 // Fashion items (Embroidery/Thoubs, Kaftans, Jackets) are real products & prices from our
 // partner store odarafashionplace.com. Perfumes are also real, from the same partner.
-// Hijabs use temporary stock photos (no partner listing yet) — swap in real ones anytime.
+// The `catalogue*` items below are the owner's own real product photos & prices
+// (from CatalogueODARA.xlsx), merged in alongside the partner-store items.
 // Perfumery Oils use temporary stock photos until oils are added to the partner catalog.
+import {
+  catalogueEmbroideryProducts,
+  catalogueKaftanProducts,
+  catalogueAbayaProducts,
+  catalogueDressProducts,
+  catalogueSetProducts,
+  catalogueHijabProducts,
+} from './catalogueProducts'
+
 const shopify = (id) => `https://odarafashionplace.com/cdn/shop/files/${id}`
 const unsplash = (id) => `https://images.unsplash.com/${id}?w=900&q=80&auto=format&fit=crop`
 
@@ -13,6 +23,7 @@ export const embroideryProducts = [
   { id: 303, name: 'Atlas Thoub', price: 214.99, category: 'Embroidery', image: shopify('039F315C-F581-46C7-B7F8-C6E2AAEB8A22.png?v=1779492457'), colors: [{ name: 'Red', hex: '#a4272c' }, { name: 'Green', hex: '#1f4d3a' }, { name: 'Purple', hex: '#5b2a6e' }], description: "A bold embroidered thoub with rich color-blocked panels and classic tailoring." },
   { id: 304, name: 'Safiya Thoube', price: 189.99, category: 'Embroidery', image: shopify('393AD928-5CD7-4E49-850E-184CF1164311.png?v=1779480807'), description: "Elegant embroidered thoube with heritage patterning along the chest panel and cuffs." },
   { id: 305, name: 'Fajr Dishdasha', price: 69.99, originalPrice: 99.99, isSale: true, category: 'Embroidery', image: shopify('6785EB06-043A-43CF-9DB2-2CEBEEF5652C.png?v=1779478773'), colors: [{ name: 'Blue', hex: '#2b4c7e' }, { name: 'Light Blue', hex: '#7fa8c9' }, { name: 'Burgundy', hex: '#6e1f2a' }, { name: 'Brown', hex: '#6b4a34' }, { name: 'Teal', hex: '#1f6b64' }], description: "A comfortable everyday dishdasha with subtle embroidered trim, available in five colors." },
+  ...catalogueEmbroideryProducts,
 ]
 
 // ---- Kaftans ----
@@ -21,6 +32,7 @@ export const kaftanProducts = [
   { id: 312, name: 'Laila Kafttan', price: 139.99, originalPrice: 179.99, isSale: true, category: 'Kaftans', image: shopify('85E46373-3CF2-4457-9052-299C6D7E718D.jpg?v=1779223274'), colors: [{ name: 'Green', hex: '#2e5c3f' }], description: "Richly patterned kaftan in emerald tones, perfect for special occasions." },
   { id: 313, name: 'Princess Kaftan', price: 229.99, originalPrice: 329.99, isSale: true, category: 'Kaftans', isNew: true, image: shopify('kafttan2.jpg?v=1789573770'), colors: [{ name: 'Gold', hex: '#c9a876' }], description: "A statement gold kaftan with dramatic sleeves for red-carpet elegance." },
   { id: 314, name: 'Samra Kafttan', price: 179.99, category: 'Kaftans', image: shopify('IMG-8061.jpg?v=1778871442'), colors: [{ name: 'Purple', hex: '#5b2a6e' }], description: "Luxurious embroidered kaftan with intricate gold-inspired patterns and a flattering waist belt — perfect for Eid, Ramadan, or special gatherings." },
+  ...catalogueKaftanProducts,
 ]
 
 // ---- Jackets & Coats ----
@@ -31,15 +43,28 @@ export const jacketProducts = [
   { id: 324, name: "Women's Linen Jacket", price: 69.99, category: 'Jackets', isSale: true, image: shopify('32a803ae-a154-4d04-806a-7f544f82964b.jpg?v=1764958066'), colors: [{ name: 'Blue', hex: '#4a6fa5' }], description: "Lightweight short jacket in distinctive colors, easy to style with jeans or skirts." },
 ]
 
-// ---- Hijabs (temporary stock photos — no partner listing yet) ----
+// ---- Abayas (real, from owner's catalogue) ----
+export const abayaProducts = [...catalogueAbayaProducts]
+
+// ---- Dresses (real, from owner's catalogue) ----
+export const dressProducts = [...catalogueDressProducts]
+
+// ---- Sets: pantsuits, skirt & top, two-piece (real, from owner's catalogue) ----
+export const setProducts = [...catalogueSetProducts]
+
+// ---- Hijabs (mostly temporary stock photos — see catalogueHijabProducts for the one real item) ----
 export const hijabProducts = [
   { id: 331, name: 'Chiffon Hijab', price: 19.99, category: 'Hijabs', image: unsplash('photo-1601869611206-3c7a6f092b05'), colors: [{ name: 'Pink', hex: '#e8a9b8' }], description: "Lightweight, breathable chiffon hijab with a soft drape, easy to style." },
   { id: 332, name: 'Jersey Hijab', price: 16.99, category: 'Hijabs', isNew: true, image: unsplash('photo-1601869610205-9aad35d5971f'), colors: [{ name: 'Pink', hex: '#e8a9b8' }], description: "Stretchy, no-slip jersey hijab for effortless everyday wear." },
   { id: 333, name: 'Printed Silk-Feel Hijab', price: 24.99, category: 'Hijabs', image: unsplash('photo-1601869609079-e2d5f5390343'), colors: [{ name: 'Purple', hex: '#8a6ea3' }], description: "Silky-smooth hijab in a printed pattern, perfect for special occasions." },
   { id: 334, name: 'Premium Modal Hijab', price: 18.99, category: 'Hijabs', isSale: true, image: unsplash('photo-1601869611834-677a936bbede'), colors: [{ name: 'Gray', hex: '#9a9a9a' }], description: "Ultra-soft modal blend hijab that holds its shape all day." },
+  ...catalogueHijabProducts,
 ]
 
-export const fashionProducts = [...embroideryProducts, ...kaftanProducts, ...jacketProducts, ...hijabProducts]
+export const fashionProducts = [
+  ...embroideryProducts, ...kaftanProducts, ...jacketProducts,
+  ...abayaProducts, ...dressProducts, ...setProducts, ...hijabProducts,
+]
 
 // ---- Perfumes (real, from odarafashionplace.com) ----
 export const perfumeProducts = [

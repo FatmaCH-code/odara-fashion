@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import ProductCard from '../components/ProductCard'
-import { fashionProducts as allProducts } from '../data/products'
+import { useProducts } from '../hooks/useProducts'
+import { fashionProducts as staticFashionProducts } from '../data/products'
+
+const FASHION_CATEGORIES = new Set(staticFashionProducts.map(p => p.category))
 
 export default function Shop() {
+  const { products } = useProducts()
+  const allProducts = products.filter(p => FASHION_CATEGORIES.has(p.category))
   const [sortBy, setSortBy] = useState('newest')
   const [categoryFilter, setCategoryFilter] = useState('all')
 

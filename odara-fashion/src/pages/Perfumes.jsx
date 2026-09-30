@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import ProductCard from '../components/ProductCard'
 import { Link } from 'react-router-dom'
-import { perfumeProducts, oilProducts } from '../data/products'
+import { useProducts } from '../hooks/useProducts'
+import { perfumeProducts as staticPerfumeProducts, oilProducts as staticOilProducts } from '../data/products'
 
-const perfumeAndOilProducts = [...perfumeProducts, ...oilProducts]
+const PERFUME_CATEGORIES = new Set([...staticPerfumeProducts, ...staticOilProducts].map(p => p.category))
 
 export default function Perfumes() {
+  const { products } = useProducts()
+  const perfumeAndOilProducts = products.filter(p => PERFUME_CATEGORIES.has(p.category))
   const [categoryFilter, setCategoryFilter] = useState('all')
 
   const filtered = categoryFilter === 'all' 

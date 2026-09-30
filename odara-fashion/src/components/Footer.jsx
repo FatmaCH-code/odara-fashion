@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Instagram } from 'lucide-react'
 import odaraEmblem from '../assets/odara-emblem.png'
+import NewsletterForm from './NewsletterForm'
 
 export default function Footer() {
   return (
@@ -53,10 +54,7 @@ export default function Footer() {
           <div className="footer-subscribe">
             <h4>Subscribe To Our Emails</h4>
             <p className="footer-desc mb-4">New arrivals, roasting-day... er, restock drops, and exclusive offers — no spam.</p>
-            <form className="newsletter-form-footer" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" placeholder="Email" required />
-              <button type="submit">Join</button>
-            </form>
+            <NewsletterForm source="footer" className="newsletter-form-footer" inputPlaceholder="Email" buttonLabel="Join" />
             <div className="footer-socials">
               <a
                 href="https://www.instagram.com/odarafashionplace/"

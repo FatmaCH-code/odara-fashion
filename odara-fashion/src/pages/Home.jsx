@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
+import NewsletterForm from '../components/NewsletterForm'
 import heroImage from '../assets/hero-traditional-dress.jpg'
 import odaraEmblem from '../assets/odara-emblem.png'
-import { embroideryProducts, kaftanProducts, jacketProducts, hijabProducts, perfumeProducts, oilProducts } from '../data/products'
+import { embroideryProducts, kaftanProducts, jacketProducts, abayaProducts, dressProducts, setProducts, hijabProducts, perfumeProducts, oilProducts } from '../data/products'
 
-// A curated mix (2 from each fashion category) for the homepage teaser
+// A curated mix across categories for the homepage teaser
 const fashionPreview = [
   ...embroideryProducts.slice(0, 2),
   ...kaftanProducts.slice(0, 2),
-  ...jacketProducts.slice(0, 2),
+  ...abayaProducts.slice(0, 2),
+  ...dressProducts.slice(0, 2),
+  ...setProducts.slice(0, 1),
+  ...jacketProducts.slice(0, 1),
   ...hijabProducts.slice(0, 2),
 ]
 
@@ -136,10 +140,7 @@ export default function Home() {
         <div className="container-premium">
           <h2 className="text-4xl font-playfair mb-4">Stay Updated</h2>
           <p className="mb-6">Subscribe for exclusive offers and new collections</p>
-          <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" placeholder="Enter your email" required />
-            <button type="submit">Subscribe</button>
-          </form>
+          <NewsletterForm source="home" inputPlaceholder="Enter your email" buttonLabel="Subscribe" />
         </div>
       </section>
     </div>

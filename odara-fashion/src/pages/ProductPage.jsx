@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
-import { allProducts } from '../data/products'
+import { useProducts } from '../hooks/useProducts'
 
 export default function ProductPage() {
   const { id } = useParams()
   const [quantity, setQuantity] = useState(1)
+  const [activeImage, setActiveImage] = useState(0)
   const addToCart = useCartStore(state => state.addItem)
+  const { products: allProducts } = useProducts()
 
   const product = allProducts.find(p => p.id === parseInt(id)) || allProducts[0]
+  const gallery = product.images && product.images.length > 0 ? product.images : [product.image]
+
+  // Reset back to the cover photo whenever we land on a different product.
+  useEffect(() => { setActiveImage(0) }, [product.id])
 
   const handleAddToCart = () => {
     addToCart({
@@ -25,9 +31,24 @@ export default function ProductPage() {
       <div className="section-premium">
         <div className="container-premium">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {/* Image */}
-            <div className="product-image-wrapper" style={{ paddingTop: '110%' }}>
-              <img src={product.image} alt={product.name} className="product-image-photo" />
+            {/* Image gallery */}
+            <div>
+              <div className="product-image-wrapper" style={{ paddingTop: '110%' }}>
+                <img src={gallery[activeImage]} alt={product.name} className="product-image-photo" />
+              </div>
+              {gallery.length > 1 && (
+                <div className="product-gallery-thumbs">
+                  {gallery.map((url, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveImage(i)}
+                      className={`product-gallery-thumb ${i === activeImage ? 'active' : ''}`}
+                    >
+                      <img src={url} alt={`${product.name} ${i + 1}`} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Details */}
