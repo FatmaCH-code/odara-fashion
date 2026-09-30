@@ -30,7 +30,12 @@ export default function OrdersPanel() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // New orders / payments appear without a manual reload.
+    const t = setInterval(() => adminListOrders().then(setOrders).catch(() => {}), 30000)
+    return () => clearInterval(t)
+  }, [])
 
   const handleStatusChange = async (id, status) => {
     setOrders(orders.map(o => o.id === id ? { ...o, status } : o))
@@ -46,7 +51,10 @@ export default function OrdersPanel() {
 
   return (
     <div>
-      <h1 className="text-2xl font-playfair mb-6">Orders ({orders.length})</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-playfair">Orders ({orders.length})</h1>
+        <button onClick={load} className="text-sm underline">Refresh</button>
+      </div>
       {error && <div className="admin-notice mb-6">{error}</div>}
 
       {orders.length === 0 ? (
@@ -64,6 +72,7 @@ export default function OrdersPanel() {
                 <th>Order</th>
                 <th>Customer</th>
                 <th>Total</th>
+                <th>Payment</th>
                 <th>Status</th>
                 <th>Date</th>
               </tr>
@@ -79,6 +88,11 @@ export default function OrdersPanel() {
                       <div className="text-2C2C2C/50 text-xs">{o.customer_email}</div>
                     </td>
                     <td>${Number(o.total_amount).toFixed(2)}</td>
+                    <td>
+                      <span className={`admin-badge ${o.payment_status === 'paid' ? 'admin-badge-delivered' : o.payment_status === 'failed' ? 'admin-badge-cancelled' : 'admin-badge-pending'}`}>
+                        {o.payment_status || 'unpaid'}
+                      </span>
+                    </td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <select
                         value={o.status}
@@ -92,7 +106,7 @@ export default function OrdersPanel() {
                   </tr>
                   {expandedId === o.id && (
                     <tr>
-                      <td colSpan={6} className="admin-order-detail">
+                      <td colSpan={7} className="admin-order-detail">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
                             <p className="admin-label">Contact</p>

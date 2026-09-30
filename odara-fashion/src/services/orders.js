@@ -5,32 +5,47 @@ function generateOrderNumber() {
   return `ODR-${Date.now().toString().slice(-6)}${rand}`
 }
 
-// Called from checkout. Payment isn't wired up yet, so every order is captured
-// with status 'pending' — a manual/COD-style flow the admin can process by hand
-// until Stripe (or similar) is connected, at which point this same function's
-// return value (the order) is what a payment step would attach to.
+// Set VITE_PAYMENTS_ENABLED=true once Stripe + the Edge Functions are
+// deployed (see SETUP.md). Until then, checkout falls back to capturing the
+// order as "pending" without collecting payment — so the site never breaks.
+const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED === 'true'
+
+// Called from checkout. When payments are enabled this creates a Stripe
+// Checkout Session (via the create-checkout-session Edge Function) and
+// returns a redirect URL. Otherwise it falls back to the old manual-order
+// flow: captured as 'pending', no payment collected, you follow up by hand.
 export async function createOrder({ name, email, phone, address, items, total }) {
   if (!isSupabaseConfigured) {
-    // No backend yet — let checkout continue anyway so the demo flow still works;
-    // the order simply won't be recorded anywhere.
     return null
   }
-  const { data, error } = await supabase
-    .from('orders')
-    .insert({
-      order_number: generateOrderNumber(),
-      customer_name: name,
-      customer_email: email,
-      customer_phone: phone,
-      shipping_address: address,
-      items,
-      total_amount: total,
-      status: 'pending',
+
+  if (paymentsEnabled) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ name, email, phone, address, items, total }),
     })
-    .select()
-    .single()
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Could not start checkout.')
+    return { redirectUrl: data.url }
+  }
+
+  // Goes through the create_order() database function (sql/orders_fix.sql):
+  // a plain insert().select() is blocked by row-level security because
+  // customers are not allowed to read the orders table back.
+  const { data: orderNumber, error } = await supabase.rpc('create_order', {
+    p_name: name,
+    p_email: email,
+    p_phone: phone,
+    p_address: address,
+    p_items: items,
+  })
   if (error) throw error
-  return data
+  return { order_number: orderNumber }
 }
 
 export async function adminListOrders() {

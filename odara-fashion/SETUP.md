@@ -86,6 +86,85 @@ message) — read what it says first. The most common cause is the same as
 above: your `orders` table is missing a column this version expects. Re-run
 `sql/schema.sql` and try again.
 
+## Accepting real payments (Stripe)
+
+Right now checkout captures orders as "pending" without collecting payment —
+you follow up manually. Here's how to turn on real, international card
+payments (plus Apple Pay / Google Pay automatically) using Stripe Checkout.
+This also automatically emails the customer a payment receipt — no extra
+email setup needed for that part.
+
+**Why this approach:** your secret Stripe key must never be in frontend code
+(anyone could read it and charge things to your account). So payment
+creation happens in a Supabase Edge Function instead — a small server-side
+function that runs on Supabase's infrastructure, not in the browser.
+
+### One-time setup
+
+1. **Create a Stripe account** at stripe.com if you don't have one. Complete
+   their business verification (needed before you can accept live payments).
+
+2. **Install the Supabase CLI** (only needed once, on your own computer):
+   ```
+   npm install -g supabase
+   ```
+
+3. **Link this project to your Supabase project**:
+   ```
+   cd odara-fashion
+   supabase login
+   supabase link --project-ref oidmhnqdhwcoqckeffeo
+   ```
+
+4. **Get your Stripe secret key**: Stripe Dashboard → Developers → API keys →
+   copy the **Secret key** (starts `sk_test_...` while testing, `sk_live_...`
+   when you're ready for real payments).
+
+5. **Set your secrets** (replace the values):
+   ```
+   supabase secrets set STRIPE_SECRET_KEY=sk_test_...
+   supabase secrets set SITE_URL=https://yoursite.com
+   ```
+
+6. **Deploy both functions**:
+   ```
+   supabase functions deploy create-checkout-session
+   supabase functions deploy stripe-webhook --no-verify-jwt
+   ```
+
+7. **Connect the webhook**: Stripe Dashboard → Developers → Webhooks → Add
+   endpoint. URL is:
+   ```
+   https://oidmhnqdhwcoqckeffeo.supabase.co/functions/v1/stripe-webhook
+   ```
+   Select event: `checkout.session.completed` (and `checkout.session.expired`
+   if you want failed/abandoned payments tracked too). After creating it,
+   Stripe shows a **Signing secret** (`whsec_...`) — copy it and run:
+   ```
+   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+   ```
+
+8. **Turn on automatic receipt emails** (so customers get a payment
+   confirmation with zero extra code): Stripe Dashboard → Settings →
+   Customer emails → enable "Successful payments".
+
+9. **Flip the switch**: in `.env.local`, set `VITE_PAYMENTS_ENABLED=true`,
+   redeploy your site (or restart `npm run dev` locally).
+
+### Testing before going live
+
+Use Stripe's test card `4242 4242 4242 4242`, any future expiry date, any
+CVC. Orders will show up in the admin's **Orders** tab with `payment_status:
+paid` once the test payment completes. Switch `sk_test_...` → `sk_live_...`
+(and redeploy the functions) only once you're ready for real charges.
+
+### What the admin sees
+
+The **Orders** tab now shows a **Payment** column (unpaid / paid / failed)
+separate from the fulfillment **Status** column (pending / processing /
+shipped / delivered) — so you can tell "paid, not shipped yet" apart from
+"placed but never paid."
+
 ## Notes on today's catalog
 
 - Real photos and prices from your partner store and your own

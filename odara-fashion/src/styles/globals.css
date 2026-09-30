@@ -204,6 +204,21 @@ button {
   .hero-logo-card {
     max-width: 220px;
   }
+  .hero-emblem-glow {
+    width: 200px;
+    height: 200px;
+  }
+  .hero-emblem-img {
+    width: 120px;
+    height: 120px;
+  }
+  .hero-emblem-word {
+    font-size: 1.7rem;
+    margin-top: 1rem;
+  }
+  .hero-emblem-tagline {
+    font-size: 0.7rem;
+  }
 }
 
 /* Navigation */
@@ -1063,7 +1078,7 @@ footer li {
 }
 
 @media (max-width: 480px) {
-  .admin-stats-grid { grid-template-columns: 1fr; }
+  .admin-stat-value { font-size: 22px; }
 }
 
 /* Product table */

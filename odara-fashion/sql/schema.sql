@@ -123,6 +123,14 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS items JSONB DEFAULT '[]'::jsonb;  -- snapshot of [{ name, price, quantity }] at order time
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
 
+-- Payment tracking (Stripe Checkout). `status` above is FULFILLMENT status
+-- (pending/processing/shipped/delivered/cancelled) — this is separate:
+-- payment_status tracks whether money has actually been collected.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR(30) DEFAULT 'unpaid';  -- unpaid | paid | refunded | failed
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_session_id TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+
 DROP TRIGGER IF EXISTS orders_set_updated_at ON orders;
 CREATE TRIGGER orders_set_updated_at
   BEFORE UPDATE ON orders

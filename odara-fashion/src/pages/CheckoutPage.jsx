@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
 import { createOrder } from '../services/orders'
 
+const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED === 'true'
+
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const items = useCartStore(state => state.items)
@@ -32,6 +34,13 @@ export default function CheckoutPage() {
         items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
         total,
       })
+      if (order?.redirectUrl) {
+        // Payments enabled — send them to Stripe's hosted checkout page.
+        // Cart is cleared on return (order-success) rather than here, in case
+        // they cancel and come back.
+        window.location.href = order.redirectUrl
+        return
+      }
       clearCart()
       navigate('/order-success', { state: { orderNumber: order?.order_number } })
     } catch (err) {
@@ -70,10 +79,12 @@ export default function CheckoutPage() {
 
                   <div className="pt-6">
                     <button type="submit" disabled={submitting} className="btn-gold w-full block text-center">
-                      {submitting ? 'Placing Order…' : 'Complete Order'}
+                      {submitting ? (paymentsEnabled ? 'Redirecting to payment…' : 'Placing Order…') : (paymentsEnabled ? 'Continue to Payment' : 'Complete Order')}
                     </button>
                     <p className="text-xs text-2C2C2C/50 text-center mt-3">
-                      Payment isn't collected online yet — we'll follow up by email/phone to confirm and arrange payment.
+                      {paymentsEnabled
+                        ? "You'll be redirected to Stripe's secure checkout to pay by card, Apple Pay or Google Pay."
+                        : "Payment isn't collected online yet — we'll follow up by email/phone to confirm and arrange payment."}
                     </p>
                   </div>
                 </form>

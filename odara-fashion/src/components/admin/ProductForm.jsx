@@ -99,7 +99,7 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
         <h2 className="text-xl font-playfair mb-6">{product ? 'Edit Product' : 'Add Product'}</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="admin-label">Name *</label>
               <input className="admin-input" value={form.name} onChange={set('name')} required />
