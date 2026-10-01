@@ -7,19 +7,24 @@ export default function ProductPage() {
   const { id } = useParams()
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
+  const [selectedSize, setSelectedSize] = useState(null)
   const addToCart = useCartStore(state => state.addItem)
   const { products: allProducts } = useProducts()
 
   const product = allProducts.find(p => p.id === parseInt(id)) || allProducts[0]
   const gallery = product.images && product.images.length > 0 ? product.images : [product.image]
 
-  // Reset back to the cover photo whenever we land on a different product.
-  useEffect(() => { setActiveImage(0) }, [product.id])
+  // Reset back to the cover photo (and cleared size) whenever we land on a different product.
+  useEffect(() => { setActiveImage(0); setSelectedSize(null) }, [product.id])
 
   const handleAddToCart = () => {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      alert('Please select a size')
+      return
+    }
     addToCart({
       id: product.id,
-      name: product.name,
+      name: selectedSize ? `${product.name} (Size ${selectedSize})` : product.name,
       price: product.price,
       quantity
     })
@@ -83,6 +88,26 @@ export default function ProductPage() {
                         }}
                         title={c.name}
                       />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="mb-8">
+                  <label className="block text-sm uppercase tracking-widest font-semibold mb-4">
+                    Size {selectedSize ? `— ${selectedSize}` : ''}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSelectedSize(s)}
+                        className={`product-size-chip ${selectedSize === s ? 'is-selected' : ''}`}
+                      >
+                        {s}
+                      </button>
                     ))}
                   </div>
                 </div>

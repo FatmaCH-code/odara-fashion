@@ -3,8 +3,13 @@ import { adminUploadProductImage } from '../../services/products'
 
 const EMPTY = {
   name: '', price: '', originalPrice: '', category: '', images: [],
-  isNew: false, isSale: false, stock: 20, description: '', colors: [],
+  isNew: false, isSale: false, stock: 20, description: '', colors: [], sizes: [],
 }
+
+// US sizing — numeric (shoes/kids/some regional garment sizing) and standard
+// letter sizing. Admin just picks whichever apply to this product.
+const NUMERIC_SIZES = ['1', '2', '3', '4', '5', '6', '7']
+const LETTER_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export default function ProductForm({ product, onSave, onCancel, categories }) {
   const [form, setForm] = useState(product ? {
@@ -70,6 +75,15 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
 
   const removeColor = (idx) => {
     setForm(f => ({ ...f, colors: f.colors.filter((_, i) => i !== idx) }))
+  }
+
+  const toggleSize = (size) => {
+    setForm(f => {
+      const sizes = f.sizes || []
+      return sizes.includes(size)
+        ? { ...f, sizes: sizes.filter(s => s !== size) }
+        : { ...f, sizes: [...sizes, size] }
+    })
   }
 
   const handleSubmit = async (e) => {
@@ -190,6 +204,35 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
                 <input className="admin-input flex-1" placeholder="Color name" value={colorName} onChange={(e) => setColorName(e.target.value)} />
                 <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="admin-color-picker" />
                 <button type="button" onClick={addColor} className="admin-btn-secondary">Add</button>
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <label className="admin-label">Sizes (US)</label>
+              <p className="text-xs text-2C2C2C/45 mb-2">Click all that apply to this product.</p>
+              <div className="admin-size-group">
+                {NUMERIC_SIZES.map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`admin-size-chip ${(form.sizes || []).includes(s) ? 'is-selected' : ''}`}
+                    onClick={() => toggleSize(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <div className="admin-size-group mt-2">
+                {LETTER_SIZES.map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`admin-size-chip ${(form.sizes || []).includes(s) ? 'is-selected' : ''}`}
+                    onClick={() => toggleSize(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

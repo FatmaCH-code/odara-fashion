@@ -1380,3 +1380,55 @@ footer li {
 .admin-toggle.is-on .admin-toggle-knob {
   transform: translateX(18px);
 }
+
+.admin-size-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-size-chip {
+  min-width: 40px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #E8D9C4;
+  background: #FAF6EE;
+  color: #6b5d4d;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-size-chip:hover {
+  border-color: #C9A876;
+}
+
+.admin-size-chip.is-selected {
+  background: #C9A876;
+  border-color: #C9A876;
+  color: #fff;
+}
+
+.product-size-chip {
+  min-width: 44px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #E8D9C4;
+  background: #fff;
+  color: #2C2C2C;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.product-size-chip:hover {
+  border-color: #C9A876;
+}
+
+.product-size-chip.is-selected {
+  background: #2C2C2C;
+  border-color: #2C2C2C;
+  color: #fff;
+}

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS products (
 ALTER TABLE products ADD COLUMN IF NOT EXISTS original_price DECIMAL(10, 2);      -- set when the item is on sale
 ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS colors JSONB DEFAULT '[]'::jsonb;   -- [{ "name": "Red", "hex": "#a4272c" }, ...]
+ALTER TABLE products ADD COLUMN IF NOT EXISTS sizes JSONB DEFAULT '[]'::jsonb;    -- ["S","M","L"] or ["1","2","3"] — US sizing
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_new BOOLEAN DEFAULT false;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_sale BOOLEAN DEFAULT false;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INT DEFAULT 20;
