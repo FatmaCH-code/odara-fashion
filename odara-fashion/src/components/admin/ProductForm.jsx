@@ -86,6 +86,30 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
     })
   }
 
+  // Per-color size availability. Undefined/missing on a color means "all of
+  // the product's general sizes apply" — only set once the admin narrows a
+  // specific color down, so most colors need no extra setup at all.
+  const toggleColorSize = (colorIdx, size) => {
+    setForm(f => {
+      const colors = [...f.colors]
+      const color = colors[colorIdx]
+      const current = color.sizes !== undefined ? color.sizes : [...(f.sizes || [])]
+      const next = current.includes(size) ? current.filter(s => s !== size) : [...current, size]
+      colors[colorIdx] = { ...color, sizes: next }
+      return { ...f, colors }
+    })
+  }
+
+  // Removes the override so this color just follows the product's general sizes again.
+  const resetColorSizes = (colorIdx) => {
+    setForm(f => {
+      const colors = [...f.colors]
+      const { sizes, ...rest } = colors[colorIdx]
+      colors[colorIdx] = rest
+      return { ...f, colors }
+    })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -190,26 +214,11 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
             </div>
 
             <div className="col-span-2">
-              <label className="admin-label">Colors</label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {(form.colors || []).map((c, i) => (
-                  <span key={i} className="admin-color-chip">
-                    <span className="admin-color-dot" style={{ background: c.hex }} />
-                    {c.name}
-                    <button type="button" onClick={() => removeColor(i)}>&times;</button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input className="admin-input flex-1" placeholder="Color name" value={colorName} onChange={(e) => setColorName(e.target.value)} />
-                <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="admin-color-picker" />
-                <button type="button" onClick={addColor} className="admin-btn-secondary">Add</button>
-              </div>
-            </div>
-
-            <div className="col-span-2">
               <label className="admin-label">Sizes (US)</label>
-              <p className="text-xs text-2C2C2C/45 mb-2">Click all that apply to this product.</p>
+              <p className="text-xs text-2C2C2C/45 mb-2">
+                Click all that apply to this product. This is the default size range — you can
+                narrow it down per color below (e.g. "Red only comes in M/L").
+              </p>
               <div className="admin-size-group">
                 {NUMERIC_SIZES.map(s => (
                   <button
@@ -234,6 +243,65 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="col-span-2">
+              <label className="admin-label">Colors</label>
+              <div className="flex gap-2 mb-3">
+                <input className="admin-input flex-1" placeholder="Color name" value={colorName} onChange={(e) => setColorName(e.target.value)} />
+                <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="admin-color-picker" />
+                <button type="button" onClick={addColor} className="admin-btn-secondary">Add</button>
+              </div>
+
+              {(form.colors || []).length > 0 && (
+                <div className="space-y-3">
+                  {form.colors.map((c, i) => {
+                    const hasOverride = c.sizes !== undefined
+                    const activeSizes = hasOverride ? c.sizes : (form.sizes || [])
+                    return (
+                      <div key={i} className="admin-color-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="flex items-center gap-2 font-medium text-sm">
+                            <span className="admin-color-dot" style={{ background: c.hex }} />
+                            {c.name}
+                          </span>
+                          <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => removeColor(i)}>
+                            <span style={{ fontSize: '14px' }}>&times;</span>
+                          </button>
+                        </div>
+
+                        {(form.sizes || []).length > 0 ? (
+                          <>
+                            <p className="text-xs text-2C2C2C/45 mb-1.5">
+                              Sizes available in {c.name}
+                              {!hasOverride && <span className="italic"> (same as product default)</span>}
+                            </p>
+                            <div className="admin-size-group">
+                              {[...NUMERIC_SIZES, ...LETTER_SIZES].filter(s => form.sizes.includes(s)).map(s => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  className={`admin-size-chip admin-size-chip-sm ${activeSizes.includes(s) ? 'is-selected' : ''}`}
+                                  onClick={() => toggleColorSize(i, s)}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                            {hasOverride && (
+                              <button type="button" className="admin-link-btn mt-1.5" onClick={() => resetColorSizes(i)}>
+                                Reset to product default
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-xs text-2C2C2C/40 italic">Set sizes above first to assign them per color.</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 

@@ -1432,3 +1432,30 @@ footer li {
   border-color: #2C2C2C;
   color: #fff;
 }
+
+.admin-color-card {
+  background: #FAF6EE;
+  border: 1px solid #E8D9C4;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.admin-size-chip-sm {
+  min-width: 34px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.admin-link-btn {
+  background: none;
+  border: none;
+  color: #a5825a;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.admin-link-btn:hover {
+  color: #C9A876;
+}

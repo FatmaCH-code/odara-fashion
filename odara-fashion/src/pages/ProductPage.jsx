@@ -7,6 +7,7 @@ export default function ProductPage() {
   const { id } = useParams()
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
+  const [selectedColor, setSelectedColor] = useState(null)
   const [selectedSize, setSelectedSize] = useState(null)
   const addToCart = useCartStore(state => state.addItem)
   const { products: allProducts } = useProducts()
@@ -14,17 +15,36 @@ export default function ProductPage() {
   const product = allProducts.find(p => p.id === parseInt(id)) || allProducts[0]
   const gallery = product.images && product.images.length > 0 ? product.images : [product.image]
 
-  // Reset back to the cover photo (and cleared size) whenever we land on a different product.
-  useEffect(() => { setActiveImage(0); setSelectedSize(null) }, [product.id])
+  // A color can narrow down which sizes it comes in (set in the admin panel).
+  // No override on the selected color — or no color selected at all — just
+  // falls back to the product's general size list.
+  const availableSizes = (selectedColor && selectedColor.sizes !== undefined)
+    ? selectedColor.sizes
+    : (product.sizes || [])
+
+  // Reset selections whenever we land on a different product.
+  useEffect(() => {
+    setActiveImage(0)
+    setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0] : null)
+    setSelectedSize(null)
+  }, [product.id])
+
+  // If switching color makes the currently-picked size unavailable, clear it.
+  useEffect(() => {
+    if (selectedSize && !availableSizes.includes(selectedSize)) {
+      setSelectedSize(null)
+    }
+  }, [selectedColor])
 
   const handleAddToCart = () => {
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+    if (availableSizes.length > 0 && !selectedSize) {
       alert('Please select a size')
       return
     }
+    const variant = [selectedColor?.name, selectedSize && `Size ${selectedSize}`].filter(Boolean).join(', ')
     addToCart({
       id: product.id,
-      name: selectedSize ? `${product.name} (Size ${selectedSize})` : product.name,
+      name: variant ? `${product.name} (${variant})` : product.name,
       price: product.price,
       quantity
     })
@@ -72,18 +92,20 @@ export default function ProductPage() {
               {product.colors && product.colors.length > 0 && (
                 <div className="mb-8">
                   <label className="block text-sm uppercase tracking-widest font-semibold mb-4">
-                    Color{product.colors.length > 1 ? 's' : ''} available
+                    Color{selectedColor ? ` — ${selectedColor.name}` : ''}
                   </label>
                   <div className="flex items-center gap-3">
-                    {product.colors.map((c, i) => (
-                      <span
+                    {product.colors.map((c) => (
+                      <button
                         key={c.name}
+                        type="button"
+                        onClick={() => setSelectedColor(c)}
                         className="product-color-dot"
                         style={{
                           width: '28px',
                           height: '28px',
                           cursor: 'pointer',
-                          boxShadow: i === 0 ? '0 0 0 2px #C9A876' : undefined,
+                          boxShadow: selectedColor?.name === c.name ? '0 0 0 2px #C9A876' : undefined,
                           backgroundColor: c.hex,
                         }}
                         title={c.name}
@@ -93,13 +115,13 @@ export default function ProductPage() {
                 </div>
               )}
 
-              {product.sizes && product.sizes.length > 0 && (
+              {availableSizes.length > 0 && (
                 <div className="mb-8">
                   <label className="block text-sm uppercase tracking-widest font-semibold mb-4">
                     Size {selectedSize ? `— ${selectedSize}` : ''}
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {product.sizes.map((s) => (
+                    {availableSizes.map((s) => (
                       <button
                         key={s}
                         type="button"
