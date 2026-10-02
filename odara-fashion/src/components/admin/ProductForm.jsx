@@ -69,7 +69,14 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
 
   const addColor = () => {
     if (!colorName.trim()) return
-    setForm(f => ({ ...f, colors: [...(f.colors || []), { name: colorName.trim(), hex: colorHex }] }))
+    // Every color starts with its OWN blank size list — never copied from
+    // the general list or from any other color. There is no shared state
+    // between colors at all, so editing one can never affect another,
+    // no matter what order you add colors or pick sizes in.
+    setForm(f => ({
+      ...f,
+      colors: [...(f.colors || []), { name: colorName.trim(), hex: colorHex, sizes: [] }],
+    }))
     setColorName('')
   }
 
@@ -77,6 +84,9 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
     setForm(f => ({ ...f, colors: f.colors.filter((_, i) => i !== idx) }))
   }
 
+  // General size list — only used for products with no color variation.
+  // Completely separate from colors' own sizes below; toggling this never
+  // touches the colors array.
   const toggleSize = (size) => {
     setForm(f => {
       const sizes = f.sizes || []
@@ -86,26 +96,15 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
     })
   }
 
-  // Per-color size availability. Undefined/missing on a color means "all of
-  // the product's general sizes apply" — only set once the admin narrows a
-  // specific color down, so most colors need no extra setup at all.
+  // Each color's own size list, toggled independently. Never reads from —
+  // or writes to — the general list or any other color.
   const toggleColorSize = (colorIdx, size) => {
     setForm(f => {
       const colors = [...f.colors]
       const color = colors[colorIdx]
-      const current = color.sizes !== undefined ? color.sizes : [...(f.sizes || [])]
+      const current = color.sizes || []
       const next = current.includes(size) ? current.filter(s => s !== size) : [...current, size]
       colors[colorIdx] = { ...color, sizes: next }
-      return { ...f, colors }
-    })
-  }
-
-  // Removes the override so this color just follows the product's general sizes again.
-  const resetColorSizes = (colorIdx) => {
-    setForm(f => {
-      const colors = [...f.colors]
-      const { sizes, ...rest } = colors[colorIdx]
-      colors[colorIdx] = rest
       return { ...f, colors }
     })
   }
@@ -216,8 +215,8 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
             <div className="col-span-2">
               <label className="admin-label">Sizes (US)</label>
               <p className="text-xs text-2C2C2C/45 mb-2">
-                Click all that apply to this product. This is the default size range — you can
-                narrow it down per color below (e.g. "Red only comes in M/L").
+                Used only if this product has no colors below. Once you add a color, set its
+                sizes on that color's own card instead — each color has its own independent list.
               </p>
               <div className="admin-size-group">
                 {NUMERIC_SIZES.map(s => (
@@ -255,51 +254,45 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
 
               {(form.colors || []).length > 0 && (
                 <div className="space-y-3">
-                  {form.colors.map((c, i) => {
-                    const hasOverride = c.sizes !== undefined
-                    const activeSizes = hasOverride ? c.sizes : (form.sizes || [])
-                    return (
-                      <div key={i} className="admin-color-card">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="flex items-center gap-2 font-medium text-sm">
-                            <span className="admin-color-dot" style={{ background: c.hex }} />
-                            {c.name}
-                          </span>
-                          <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => removeColor(i)}>
-                            <span style={{ fontSize: '14px' }}>&times;</span>
-                          </button>
-                        </div>
-
-                        {(form.sizes || []).length > 0 ? (
-                          <>
-                            <p className="text-xs text-2C2C2C/45 mb-1.5">
-                              Sizes available in {c.name}
-                              {!hasOverride && <span className="italic"> (same as product default)</span>}
-                            </p>
-                            <div className="admin-size-group">
-                              {[...NUMERIC_SIZES, ...LETTER_SIZES].filter(s => form.sizes.includes(s)).map(s => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  className={`admin-size-chip admin-size-chip-sm ${activeSizes.includes(s) ? 'is-selected' : ''}`}
-                                  onClick={() => toggleColorSize(i, s)}
-                                >
-                                  {s}
-                                </button>
-                              ))}
-                            </div>
-                            {hasOverride && (
-                              <button type="button" className="admin-link-btn mt-1.5" onClick={() => resetColorSizes(i)}>
-                                Reset to product default
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-xs text-2C2C2C/40 italic">Set sizes above first to assign them per color.</p>
-                        )}
+                  {form.colors.map((c, i) => (
+                    <div key={i} className="admin-color-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="flex items-center gap-2 font-medium text-sm">
+                          <span className="admin-color-dot" style={{ background: c.hex }} />
+                          {c.name}
+                        </span>
+                        <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => removeColor(i)}>
+                          <span style={{ fontSize: '14px' }}>&times;</span>
+                        </button>
                       </div>
-                    )
-                  })}
+
+                      <p className="text-xs text-2C2C2C/45 mb-1.5">Sizes available in {c.name}</p>
+                      <div className="admin-size-group">
+                        {NUMERIC_SIZES.map(s => (
+                          <button
+                            key={s}
+                            type="button"
+                            className={`admin-size-chip admin-size-chip-sm ${(c.sizes || []).includes(s) ? 'is-selected' : ''}`}
+                            onClick={() => toggleColorSize(i, s)}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="admin-size-group mt-1.5">
+                        {LETTER_SIZES.map(s => (
+                          <button
+                            key={s}
+                            type="button"
+                            className={`admin-size-chip admin-size-chip-sm ${(c.sizes || []).includes(s) ? 'is-selected' : ''}`}
+                            onClick={() => toggleColorSize(i, s)}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
