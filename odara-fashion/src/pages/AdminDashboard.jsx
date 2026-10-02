@@ -1,66 +1,24 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingBag, Mail, Users, LogOut, Plus, Pencil, Trash2, ExternalLink, Menu, X } from 'lucide-react'
+import { useState } from 'react'
+import { Link, NavLink, Routes, Route } from 'react-router-dom'
+import { LayoutDashboard, Package, ShoppingBag, Mail, Users, LogOut, ExternalLink, Menu, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { adminListProducts, adminCreateProduct, adminUpdateProduct, adminDeleteProduct } from '../services/products'
-import StatsOverview from '../components/admin/StatsOverview'
-import ProductForm from '../components/admin/ProductForm'
+import OverviewPanel from '../components/admin/OverviewPanel'
+import ProductsPanel from '../components/admin/ProductsPanel'
 import OrdersPanel from '../components/admin/OrdersPanel'
 import SubscribersPanel from '../components/admin/SubscribersPanel'
 import TeamPanel from '../components/admin/TeamPanel'
 import odaraEmblem from '../assets/odara-emblem.png'
 
+const NAV_ITEMS = [
+  { to: '/admin', end: true, icon: LayoutDashboard, label: 'Overview' },
+  { to: '/admin/products', icon: Package, label: 'Products' },
+  { to: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
+  { to: '/admin/subscribers', icon: Mail, label: 'Subscribers' },
+  { to: '/admin/team', icon: Users, label: 'Team' },
+]
+
 export default function AdminDashboard() {
-  const [tab, setTab] = useState('overview')
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
-  const [editingProduct, setEditingProduct] = useState(null) // null = closed, {} = new, {...} = editing
-  const [deletingId, setDeletingId] = useState(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-
-  const load = async () => {
-    setLoading(true)
-    try {
-      const data = await adminListProducts()
-      setProducts(data)
-      setError('')
-    } catch (err) {
-      setError(err.message)
-    }
-    setLoading(false)
-  }
-
-  useEffect(() => { load() }, [])
-
-  const categories = [...new Set(products.map(p => p.category))].sort()
-
-  const goToTab = (t) => {
-    setTab(t)
-    setMobileNavOpen(false)
-  }
-
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const handleSave = async (form) => {
-    if (editingProduct?.id) {
-      await adminUpdateProduct(editingProduct.id, form)
-    } else {
-      await adminCreateProduct(form)
-    }
-    setEditingProduct(null)
-    await load()
-  }
-
-  const handleDelete = async (id) => {
-    setDeletingId(null)
-    await adminDeleteProduct(id)
-    await load()
-  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -95,21 +53,17 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="admin-nav">
-          <button className={`admin-nav-item ${tab === 'overview' ? 'active' : ''}`} onClick={() => goToTab('overview')}>
-            <LayoutDashboard className="w-4 h-4" /> Overview
-          </button>
-          <button className={`admin-nav-item ${tab === 'products' ? 'active' : ''}`} onClick={() => goToTab('products')}>
-            <Package className="w-4 h-4" /> Products
-          </button>
-          <button className={`admin-nav-item ${tab === 'orders' ? 'active' : ''}`} onClick={() => goToTab('orders')}>
-            <ShoppingBag className="w-4 h-4" /> Orders
-          </button>
-          <button className={`admin-nav-item ${tab === 'subscribers' ? 'active' : ''}`} onClick={() => goToTab('subscribers')}>
-            <Mail className="w-4 h-4" /> Subscribers
-          </button>
-          <button className={`admin-nav-item ${tab === 'team' ? 'active' : ''}`} onClick={() => goToTab('team')}>
-            <Users className="w-4 h-4" /> Team
-          </button>
+          {NAV_ITEMS.map(({ to, end, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setMobileNavOpen(false)}
+            >
+              <Icon className="w-4 h-4" /> {label}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="mt-auto space-y-2">
@@ -123,105 +77,16 @@ export default function AdminDashboard() {
       </aside>
 
       <main className="admin-main">
-        {error && (
-          <div className="admin-notice mb-6">{error}</div>
-        )}
-
-        {loading ? (
-          <p className="text-2C2C2C/50">Loading…</p>
-        ) : tab === 'overview' ? (
-          <>
-            <h1 className="text-2xl font-playfair mb-6">Overview</h1>
-            <StatsOverview products={products} />
-          </>
-        ) : tab === 'orders' ? (
-          <OrdersPanel />
-        ) : tab === 'subscribers' ? (
-          <SubscribersPanel />
-        ) : tab === 'team' ? (
-          <TeamPanel />
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-              <h1 className="text-2xl font-playfair">Products ({products.length})</h1>
-              <div className="flex gap-3">
-                <input
-                  className="admin-input admin-search"
-                  placeholder="Search products…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <button className="admin-btn-primary flex items-center gap-2" onClick={() => setEditingProduct({})}>
-                  <Plus className="w-4 h-4" /> Add Product
-                </button>
-              </div>
-            </div>
-
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Flags</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(p => (
-                    <tr key={p.id}>
-                      <td>{p.image ? <img src={p.image} alt="" className="admin-table-thumb" /> : <div className="admin-table-thumb-empty" />}</td>
-                      <td className="font-medium">{p.name}</td>
-                      <td className="text-2C2C2C/60">{p.category}</td>
-                      <td>
-                        ${p.price}
-                        {p.originalPrice && <span className="text-2C2C2C/45 line-through ml-2 text-xs">${p.originalPrice}</span>}
-                      </td>
-                      <td>{p.stock}</td>
-                      <td className="space-x-1">
-                        {p.isNew && <span className="admin-badge admin-badge-new">New</span>}
-                        {p.isSale && <span className="admin-badge admin-badge-sale">Sale</span>}
-                      </td>
-                      <td>
-                        <div className="flex gap-2 justify-end">
-                          <button onClick={() => setEditingProduct(p)} className="admin-icon-btn"><Pencil className="w-4 h-4" /></button>
-                          <button onClick={() => setDeletingId(p.id)} className="admin-icon-btn admin-icon-btn-danger"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filtered.length === 0 && <p className="text-2C2C2C/45 text-center py-12">No products match your search.</p>}
-            </div>
-          </>
-        )}
+        <Routes>
+          <Route index element={<OverviewPanel />} />
+          <Route path="products" element={<ProductsPanel />} />
+          <Route path="products/new" element={<ProductsPanel />} />
+          <Route path="products/:id/edit" element={<ProductsPanel />} />
+          <Route path="orders" element={<OrdersPanel />} />
+          <Route path="subscribers" element={<SubscribersPanel />} />
+          <Route path="team" element={<TeamPanel />} />
+        </Routes>
       </main>
-
-      {editingProduct !== null && (
-        <ProductForm
-          product={editingProduct.id ? editingProduct : null}
-          categories={categories}
-          onSave={handleSave}
-          onCancel={() => setEditingProduct(null)}
-        />
-      )}
-
-      {deletingId !== null && (
-        <div className="admin-modal-backdrop" onClick={() => setDeletingId(null)}>
-          <div className="admin-modal admin-modal-sm" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-playfair mb-3">Delete this product?</h2>
-            <p className="text-2C2C2C/60 text-sm mb-6">This can't be undone.</p>
-            <div className="flex gap-3">
-              <button className="admin-btn-secondary flex-1" onClick={() => setDeletingId(null)}>Cancel</button>
-              <button className="admin-btn-danger flex-1" onClick={() => handleDelete(deletingId)}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

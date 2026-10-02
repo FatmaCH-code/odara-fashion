@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
 import { useProducts } from '../hooks/useProducts'
+import { sortSizes } from '../utils/sizes'
 
 export default function ProductPage() {
   const { id } = useParams()
@@ -18,9 +19,12 @@ export default function ProductPage() {
   // A color can narrow down which sizes it comes in (set in the admin panel).
   // No override on the selected color — or no color selected at all — just
   // falls back to the product's general size list.
-  const availableSizes = (selectedColor && selectedColor.sizes !== undefined)
-    ? selectedColor.sizes
-    : (product.sizes || [])
+  // Sorted defensively here too (not just when the admin saves) so any
+  // product saved before this fix still displays in the right order for
+  // customers without needing to be re-saved.
+  const availableSizes = sortSizes(
+    (selectedColor && selectedColor.sizes !== undefined) ? selectedColor.sizes : (product.sizes || [])
+  )
 
   // Reset selections whenever we land on a different product.
   useEffect(() => {

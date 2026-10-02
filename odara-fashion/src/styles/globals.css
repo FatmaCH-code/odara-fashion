@@ -1459,3 +1459,29 @@ footer li {
 .admin-link-btn:hover {
   color: #C9A876;
 }
+
+.admin-password-wrap {
+  position: relative;
+}
+
+.admin-password-wrap .admin-input {
+  padding-right: 2.5rem;
+}
+
+.admin-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #8a7a68;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-password-toggle:hover {
+  color: #C9A876;
+}

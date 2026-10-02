@@ -46,7 +46,7 @@ export default function App() {
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/about" element={<About />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+          <Route path="/admin/*" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
         </Routes>
       </StorefrontChrome>
     </BrowserRouter>

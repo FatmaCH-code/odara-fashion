@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import odaraEmblem from '../assets/odara-emblem.png'
 
@@ -7,6 +8,7 @@ export default function AdminLogin() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -70,14 +72,25 @@ export default function AdminLogin() {
           </div>
           <div>
             <label className="admin-label">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="admin-input"
-              placeholder="••••••••"
-            />
+            <div className="admin-password-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="admin-input"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                className="admin-password-toggle"
+                onClick={() => setShowPassword(s => !s)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button type="submit" disabled={loading} className="admin-btn-primary w-full">

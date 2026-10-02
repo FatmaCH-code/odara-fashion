@@ -1,15 +1,11 @@
 import { useState } from 'react'
 import { adminUploadProductImage } from '../../services/products'
+import { NUMERIC_SIZES, LETTER_SIZES, sortSizes } from '../../utils/sizes'
 
 const EMPTY = {
   name: '', price: '', originalPrice: '', category: '', images: [],
   isNew: false, isSale: false, stock: 20, description: '', colors: [], sizes: [],
 }
-
-// US sizing — numeric (shoes/kids/some regional garment sizing) and standard
-// letter sizing. Admin just picks whichever apply to this product.
-const NUMERIC_SIZES = ['1', '2', '3', '4', '5', '6', '7']
-const LETTER_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']
 
 export default function ProductForm({ product, onSave, onCancel, categories }) {
   const [form, setForm] = useState(product ? {
@@ -90,9 +86,8 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
   const toggleSize = (size) => {
     setForm(f => {
       const sizes = f.sizes || []
-      return sizes.includes(size)
-        ? { ...f, sizes: sizes.filter(s => s !== size) }
-        : { ...f, sizes: [...sizes, size] }
+      const next = sizes.includes(size) ? sizes.filter(s => s !== size) : sortSizes([...sizes, size])
+      return { ...f, sizes: next }
     })
   }
 
@@ -103,7 +98,7 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
       const colors = [...f.colors]
       const color = colors[colorIdx]
       const current = color.sizes || []
-      const next = current.includes(size) ? current.filter(s => s !== size) : [...current, size]
+      const next = current.includes(size) ? current.filter(s => s !== size) : sortSizes([...current, size])
       colors[colorIdx] = { ...color, sizes: next }
       return { ...f, colors }
     })
