@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { adminUploadProductImage } from '../../services/products'
 import { NUMERIC_SIZES, LETTER_SIZES, sortSizes } from '../../utils/sizes'
-import { PERFUME_BRANDS, PERFUME_CATEGORY, OIL_CATEGORY, isPerfumeCategory } from '../../utils/categories'
+import { PERFUME_BRANDS, PERFUME_CATEGORY, OIL_CATEGORY, isPerfumeCategory, getBrandTabs } from '../../utils/categories'
 
 const EMPTY = {
   name: '', price: '', originalPrice: '', category: '', brand: '', images: [],
   isNew: false, isSale: false, isBest: false, stock: 20, description: '', colors: [], sizes: [],
 }
 
-export default function ProductForm({ product, onSave, onCancel, categories }) {
+export default function ProductForm({ product, onSave, onCancel, categories, brands }) {
   const [form, setForm] = useState(product ? {
     ...EMPTY,
     ...product,
@@ -24,8 +24,11 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
   const [urlInput, setUrlInput] = useState('')
 
   // Built-in sections are always offered, even before any product uses them.
-  const categoryOptions = [...new Set([...(categories || []), PERFUME_CATEGORY, OIL_CATEGORY])]
+  const categoryOptions = [...new Set([...(categories || []), PERFUME_CATEGORY, OIL_CATEGORY, form.category].filter(Boolean))]
   const showBrand = isPerfumeCategory(form.category)
+  const [newCategory, setNewCategory] = useState(false)
+  const brandOptions = getBrandTabs((brands || []).map(b => ({ brand: b })).concat(form.brand ? [{ brand: form.brand }] : []))
+  const [otherBrand, setOtherBrand] = useState(false)
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }))
   const setBool = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.checked }))
@@ -154,45 +157,42 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
 
             <div className="col-span-2">
               <label className="admin-label">Category *</label>
-              <input className="admin-input" value={form.category} onChange={set('category')} required list="admin-categories" placeholder="Pick one below, or type a new category" />
-              <datalist id="admin-categories">
-                {categoryOptions.map(c => <option key={c} value={c} />)}
-              </datalist>
-              <div className="admin-size-group mt-2">
-                {[PERFUME_CATEGORY, OIL_CATEGORY].map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    className={`admin-size-chip admin-size-chip-sm ${form.category === c ? 'is-selected' : ''}`}
-                    onClick={() => setForm(f => ({ ...f, category: c }))}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
+              <select
+                className="admin-input"
+                value={newCategory ? '__new__' : form.category}
+                onChange={(e) => {
+                  if (e.target.value === '__new__') { setNewCategory(true); setForm(f => ({ ...f, category: '' })) }
+                  else { setNewCategory(false); setForm(f => ({ ...f, category: e.target.value })) }
+                }}
+                required={!newCategory}
+              >
+                <option value="">Choose a category…</option>
+                {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="__new__">+ New category…</option>
+              </select>
+              {newCategory && (
+                <input className="admin-input mt-2" autoFocus required value={form.category} onChange={set('category')} placeholder="Type the new category name" />
+              )}
             </div>
 
             {showBrand && (
             <div className="col-span-2">
-              <label className="admin-label">Brand (perfume company)</label>
-              <div className="admin-size-group">
-                {PERFUME_BRANDS.map(b => (
-                  <button
-                    key={b}
-                    type="button"
-                    className={`admin-size-chip admin-size-chip-sm ${form.brand === b ? 'is-selected' : ''}`}
-                    onClick={() => setForm(f => ({ ...f, brand: f.brand === b ? '' : b }))}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-              <input
-                className="admin-input mt-2"
-                value={form.brand || ''}
-                onChange={set('brand')}
-                placeholder="...or type another brand"
-              />
+              <label className="admin-label">Perfume brand</label>
+              <select
+                className="admin-input"
+                value={otherBrand ? '__other__' : (form.brand || '')}
+                onChange={(e) => {
+                  if (e.target.value === '__other__') { setOtherBrand(true); setForm(f => ({ ...f, brand: '' })) }
+                  else { setOtherBrand(false); setForm(f => ({ ...f, brand: e.target.value })) }
+                }}
+              >
+                <option value="">Choose a brand…</option>
+                {brandOptions.map(b => <option key={b} value={b}>{b}</option>)}
+                <option value="__other__">+ Another brand…</option>
+              </select>
+              {otherBrand && (
+                <input className="admin-input mt-2" autoFocus value={form.brand || ''} onChange={set('brand')} placeholder="Type the brand name" />
+              )}
             </div>
             )}
 

@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Star } from 'lucide-react'
 import { useAdminProducts } from '../../hooks/useAdminProducts'
 import ProductForm from './ProductForm'
+import { adminGetExtraCategories } from '../../services/categories'
 
 export default function ProductsPanel() {
   const { products, loading, error, saveProduct, deleteProduct } = useAdminProducts()
   const [search, setSearch] = useState('')
   const [deletingId, setDeletingId] = useState(null)
+  const [extraCategories, setExtraCategories] = useState([])
+  useEffect(() => { adminGetExtraCategories().then(setExtraCategories).catch(() => {}) }, [])
   const navigate = useNavigate()
   const { id } = useParams()
   const { pathname } = useLocation()
@@ -20,7 +23,8 @@ export default function ProductsPanel() {
   const editingProduct = isAdding ? {} : (id ? products.find(p => p.id === parseInt(id)) : null)
   const modalOpen = isAdding || (!!id && !loading)
 
-  const categories = [...new Set(products.map(p => p.category))].sort()
+  const categories = [...new Set([...products.map(p => p.category), ...extraCategories].filter(Boolean))].sort()
+  const brands = [...new Set(products.map(p => p.brand).filter(Boolean))]
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -95,7 +99,14 @@ export default function ProductsPanel() {
                 <td className="space-x-1">
                   {p.isNew && <span className="admin-badge admin-badge-new">New</span>}
                   {p.isSale && <span className="admin-badge admin-badge-sale">Sale</span>}
-                  {p.isBest && <span className="admin-badge admin-badge-shipped">Best</span>}
+                  <button
+                    type="button"
+                    className="admin-icon-btn"
+                    title={p.isBest ? 'Remove from Best Sellers' : 'Add to Best Sellers'}
+                    onClick={() => saveProduct({ ...p, isBest: !p.isBest }, p.id)}
+                  >
+                    <Star className="w-4 h-4" fill={p.isBest ? '#C9A876' : 'none'} stroke={p.isBest ? '#C9A876' : 'currentColor'} />
+                  </button>
                 </td>
                 <td>
                   <div className="flex gap-2 justify-end">
@@ -114,6 +125,7 @@ export default function ProductsPanel() {
         <ProductForm
           product={editingProduct?.id ? editingProduct : null}
           categories={categories}
+          brands={brands}
           onSave={handleSave}
           onCancel={closeModal}
         />

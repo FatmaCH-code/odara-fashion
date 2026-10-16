@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, NavLink, Routes, Route } from 'react-router-dom'
-import { LayoutDashboard, Package, Sparkles, Percent, ShoppingBag, Mail, Users, LogOut, ExternalLink, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, Tag, Sparkles, Percent, ShoppingBag, Mail, Users, LogOut, ExternalLink, Menu, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import OverviewPanel from '../components/admin/OverviewPanel'
 import ProductsPanel from '../components/admin/ProductsPanel'
+import CategoriesPanel from '../components/admin/CategoriesPanel'
 import MusePanel from '../components/admin/MusePanel'
 import OffersPanel from '../components/admin/OffersPanel'
 import OrdersPanel from '../components/admin/OrdersPanel'
@@ -14,6 +15,7 @@ import odaraEmblem from '../assets/odara-emblem.png'
 const NAV_ITEMS = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'Overview' },
   { to: '/admin/products', icon: Package, label: 'Products' },
+  { to: '/admin/categories', icon: Tag, label: 'Categories' },
   { to: '/admin/muse', icon: Sparkles, label: 'Muse' },
   { to: '/admin/offers', icon: Percent, label: 'Offers' },
   { to: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
@@ -86,6 +88,7 @@ export default function AdminDashboard() {
           <Route path="products" element={<ProductsPanel />} />
           <Route path="products/new" element={<ProductsPanel />} />
           <Route path="products/:id/edit" element={<ProductsPanel />} />
+          <Route path="categories" element={<CategoriesPanel />} />
           <Route path="muse" element={<MusePanel />} />
           <Route path="muse/new" element={<MusePanel />} />
           <Route path="muse/:id/edit" element={<MusePanel />} />

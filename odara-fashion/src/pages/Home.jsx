@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Ruler, Gem, Droplets, MapPin } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
@@ -30,6 +31,26 @@ function ProductRow({ items }) {
   )
 }
 
+// Auto-scrolling strip of best sellers (like the reference video): endless slow
+// slide, pauses when touched or hovered, with a "View all" button underneath.
+function BestSellersMarquee({ items }) {
+  // Repeat the list until the strip is wide enough, then twice so the loop never shows a gap.
+  const base = items.length >= 6 ? items : Array.from({ length: Math.ceil(6 / items.length) * items.length }, (_, i) => items[i % items.length])
+  const track = [...base, ...base]
+  const seconds = Math.max(24, base.length * 5)
+  return (
+    <div className="bestsellers-marquee" aria-label="Best sellers">
+      <div className="bestsellers-track" style={{ animationDuration: `${seconds}s` }}>
+        {track.map((p, i) => (
+          <div className="bestsellers-item" key={`${p.id}-${i}`} aria-hidden={i >= base.length ? 'true' : undefined}>
+            <ProductCard product={p} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   // Everything below reads the live (admin-managed) catalog.
   const { products } = useProducts()
@@ -38,7 +59,14 @@ export default function Home() {
 
   const newest = (list) => [...list].sort((a, b) => b.id - a.id)
   const newArrivals = newest(products.filter(p => p.isNew)).slice(0, 8)
-  const bestSellers = newest(products.filter(p => p.isBest)).slice(0, 8)
+  // Admin-chosen best sellers (star / "Best Seller" box). Until the admin picks any,
+  // a random selection fills the strip so it is never empty.
+  const chosen = newest(products.filter(p => p.isBest)).slice(0, 12)
+  const randomPick = useMemo(
+    () => [...products].filter(p => p.image).sort(() => Math.random() - 0.5).slice(0, 10),
+    [products.length] // eslint-disable-line react-hooks/exhaustive-deps
+  )
+  const bestSellers = chosen.length > 0 ? chosen : randomPick
   const perfumes = products.filter(isPerfume).slice(0, 4)
   const oils = products.filter(isOil).slice(0, 4)
 
@@ -79,13 +107,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Shop by category */}
-      <section className="home-section">
-        <div className="container-premium">
-          <SectionHead title="Shop by Category" subtitle="Find your everyday — or your next occasion" />
-          <CategoryTiles />
-        </div>
-      </section>
+      {/* Best sellers — sits right above New Arrivals (admin: tick "Best Seller" on a product) */}
+      {bestSellers.length > 0 && (
+        <section className="home-section bestsellers-section">
+          <div className="container-premium">
+            <div className="section-head section-head-center">
+              <div>
+                <h2 className="section-head-title">Best <em>Sellers</em></h2>
+                <p className="section-head-sub">The pieces our customers love most</p>
+              </div>
+            </div>
+          </div>
+          <BestSellersMarquee items={bestSellers} />
+          <div className="bestsellers-cta"><Link to="/shop?tag=best" className="btn-outline">View all</Link></div>
+        </section>
+      )}
 
       {/* New arrivals (admin: tick "New" on a product) */}
       {newArrivals.length > 0 && (
@@ -97,15 +133,13 @@ export default function Home() {
         </section>
       )}
 
-      {/* Best sellers (admin: tick "Best Seller" on a product) */}
-      {bestSellers.length > 0 && (
-        <section className="home-section">
-          <div className="container-premium">
-            <SectionHead title="Best Sellers" subtitle="The pieces our customers love most" to="/shop?tag=best" />
-            <ProductRow items={bestSellers} />
-          </div>
-        </section>
-      )}
+      {/* Shop by category */}
+      <section className="home-section">
+        <div className="container-premium">
+          <SectionHead title="Shop by Category" subtitle="Find your everyday — or your next occasion" />
+          <CategoryTiles />
+        </div>
+      </section>
 
       {/* Perfumes */}
       {perfumes.length > 0 && (
