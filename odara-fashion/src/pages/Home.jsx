@@ -1,109 +1,136 @@
 import { Link } from 'react-router-dom'
+import { Ruler, Gem, Droplets, MapPin } from 'lucide-react'
 import ProductCard from '../components/ProductCard'
 import NewsletterForm from '../components/NewsletterForm'
+import MuseShowcase from '../components/MuseShowcase'
+import CategoryTiles from '../components/CategoryTiles'
 import heroImage from '../assets/hero-traditional-dress.jpg'
 import odaraEmblem from '../assets/odara-emblem.png'
-import { embroideryProducts, kaftanProducts, jacketProducts, abayaProducts, dressProducts, setProducts, hijabProducts, perfumeProducts, oilProducts } from '../data/products'
+import { useProducts } from '../hooks/useProducts'
+import { useSiteSettings } from '../hooks/useSiteSettings'
+import { isPerfume, isOil } from '../utils/categories'
 
-// A curated mix across categories for the homepage teaser
-const fashionPreview = [
-  ...embroideryProducts.slice(0, 2),
-  ...kaftanProducts.slice(0, 2),
-  ...abayaProducts.slice(0, 2),
-  ...dressProducts.slice(0, 2),
-  ...setProducts.slice(0, 1),
-  ...jacketProducts.slice(0, 1),
-  ...hijabProducts.slice(0, 2),
-]
+function SectionHead({ title, subtitle, to, linkLabel = 'View all' }) {
+  return (
+    <div className="section-head">
+      <div>
+        <h2 className="section-head-title">{title}</h2>
+        {subtitle && <p className="section-head-sub">{subtitle}</p>}
+      </div>
+      {to && <Link to={to} className="section-head-link">{linkLabel} →</Link>}
+    </div>
+  )
+}
+
+function ProductRow({ items }) {
+  return (
+    <div className="products-grid-fade grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+      {items.map(p => <ProductCard key={p.id} product={p} />)}
+    </div>
+  )
+}
 
 export default function Home() {
+  // Everything below reads the live (admin-managed) catalog.
+  const { products } = useProducts()
+  const { settings } = useSiteSettings()
+  const percent = settings.welcomeOffer.percent
+
+  const newest = (list) => [...list].sort((a, b) => b.id - a.id)
+  const newArrivals = newest(products.filter(p => p.isNew)).slice(0, 8)
+  const bestSellers = newest(products.filter(p => p.isBest)).slice(0, 8)
+  const perfumes = products.filter(isPerfume).slice(0, 4)
+  const oils = products.filter(isOil).slice(0, 4)
+
   return (
     <div className="bg-FEFDF9">
-      {/* Hero - Traditional Dress Photo Background */}
-      <section
-        className="hero-premium relative"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
-        <div className="hero-scrim"></div>
-        <div className="relative z-10 container-premium">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-screen py-16">
-            {/* Left: Logo Emblem - soft, round, no hard edges */}
-            <div className="hero-logo-wrap flex justify-center md:justify-start items-center order-2 md:order-1">
-              <div className="hero-emblem-stack">
-                <div className="hero-emblem-glow"></div>
-                <img
-                  src={odaraEmblem}
-                  alt="Odara"
-                  className="hero-emblem-img"
-                />
-                <h2 className="hero-emblem-word">ODARA</h2>
-                <p className="hero-emblem-tagline">In Arabic Women's Clothing</p>
-              </div>
+      {/* Hero */}
+      <section className="hero-split">
+        <div className="container-premium hero-split-grid">
+          <div className="hero-split-copy">
+            <span className="hero-split-kicker">Fashion &amp; Fragrance</span>
+            <h1 className="hero-split-title">Elegance woven in every thread &amp; scent.</h1>
+            <p className="hero-split-text">
+              Heritage-embroidered thobes, kaftans and abayas, alongside authentic Arabian perfumes and pure
+              perfumery oils — curated for the modern woman.
+            </p>
+            <div className="hero-split-cta">
+              <Link to="/shop?tag=new" className="btn-gold">Shop New Arrivals</Link>
+              <Link to="/perfumes" className="btn-outline">Explore Perfumes</Link>
             </div>
-
-            {/* Right: Content */}
-            <div className="hero-content text-left order-1 md:order-2">
-              <span className="hero-kicker">Fashion &amp; Fragrance</span>
-              <h1 className="text-4xl md:text-5xl font-playfair text-white mb-4 leading-tight">
-                Elegance Woven in<br />Every Thread &amp; Scent
-              </h1>
-              <p className="text-lg text-white/85 mb-8 max-w-md leading-relaxed">
-                Discover curated collections of luxury Arabic fashion and signature fragrances. Elegance redefined for the modern woman.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/shop" className="btn-gold text-center">Shop Collection</Link>
-                <Link to="/perfumes" className="btn-outline-light text-center">Explore Scents</Link>
-              </div>
+          </div>
+          <div className="hero-split-media">
+            <img src={heroImage} alt="Women wearing embroidered Odara kaftans" />
+            <div className="hero-split-badge">
+              <img src={odaraEmblem} alt="" />
+              <span>ODARA</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Fashion Collection */}
-      <section className="section-premium">
-        <div className="container-premium">
-          <h2 className="section-title">Fashion</h2>
-          <div className="collections-grid">
-            {fashionPreview.map(product => (
-              <ProductCard key={product.id} product={product} isSale={product.isSale} isNew={product.isNew} />
-            ))}
-          </div>
-          <div className="text-center mt-12">
-            <Link to="/shop" className="btn-gold">View All</Link>
-          </div>
+      {/* Value strip */}
+      <section className="value-strip">
+        <div className="container-premium value-strip-grid">
+          <div><Gem className="w-5 h-5" /><span>Heritage embroidery</span></div>
+          <div><Droplets className="w-5 h-5" /><span>Authentic perfumes &amp; oils</span></div>
+          <div><Ruler className="w-5 h-5" /><span>Sizes 1–8 &amp; S–XXXL</span></div>
+          <div><MapPin className="w-5 h-5" /><span>Visit us in Columbus, OH</span></div>
         </div>
       </section>
 
-      {/* Perfumes Section */}
-      <section className="section-premium bg-F5EFE0">
+      {/* Shop by category */}
+      <section className="home-section">
         <div className="container-premium">
-          <h2 className="section-title">Fragrances</h2>
-          <p className="text-center text-lg text-2C2C2C/70 mb-8 max-w-xl mx-auto">
-            Experience the essence of luxury with our curated fragrance collection
-          </p>
-          <div className="collections-grid">
-            {perfumeProducts.slice(0, 4).map(product => (
-              <ProductCard key={product.id} product={product} isNew={product.isNew} />
-            ))}
-          </div>
-          <div className="text-center mt-12">
-            <Link to="/perfumes" className="btn-gold">Explore More</Link>
-          </div>
+          <SectionHead title="Shop by Category" subtitle="Find your everyday — or your next occasion" />
+          <CategoryTiles />
         </div>
       </section>
 
-      {/* Oils Section */}
-      <section className="section-premium">
-        <div className="container-premium">
-          <h2 className="section-title">Perfumery Oils</h2>
-          <p className="text-center text-lg text-2C2C2C/70 mb-8 max-w-xl mx-auto">
-            Pure, luxurious oil blends for your personal collection
-          </p>
-          <div className="collections-grid">
-            {oilProducts.map(product => (
-              <ProductCard key={product.id} product={product} isNew={product.isNew} />
-            ))}
+      {/* New arrivals (admin: tick "New" on a product) */}
+      {newArrivals.length > 0 && (
+        <section className="home-section home-section-alt">
+          <div className="container-premium">
+            <SectionHead title="New Arrivals" subtitle="Fresh pieces, just landed" to="/shop?tag=new" />
+            <ProductRow items={newArrivals} />
           </div>
+        </section>
+      )}
+
+      {/* Best sellers (admin: tick "Best Seller" on a product) */}
+      {bestSellers.length > 0 && (
+        <section className="home-section">
+          <div className="container-premium">
+            <SectionHead title="Best Sellers" subtitle="The pieces our customers love most" to="/shop?tag=best" />
+            <ProductRow items={bestSellers} />
+          </div>
+        </section>
+      )}
+
+      {/* Perfumes */}
+      {perfumes.length > 0 && (
+        <section className="home-section home-section-alt">
+          <div className="container-premium">
+            <SectionHead title="Perfumes" subtitle="Authentic Arabian perfumes from the world's best-loved houses" to="/perfumes" linkLabel="Shop all perfumes" />
+            <ProductRow items={perfumes} />
+          </div>
+        </section>
+      )}
+
+      {/* Perfumery oils */}
+      {oils.length > 0 && (
+        <section className="home-section">
+          <div className="container-premium">
+            <SectionHead title="Perfumery Oils" subtitle="Pure, luxurious oil blends for your personal collection" to="/perfumery-oils" linkLabel="Shop all oils" />
+            <ProductRow items={oils} />
+          </div>
+        </section>
+      )}
+
+      {/* The Odara Muse — how the pieces look on real customers (admin: Muse tab) */}
+      <section className="muse-home-section">
+        <div className="container-premium">
+          <MuseShowcase limit={5} showAllLink />
         </div>
       </section>
 
@@ -138,8 +165,8 @@ export default function Home() {
       {/* Newsletter */}
       <section className="newsletter-premium">
         <div className="container-premium">
-          <h2 className="text-4xl font-playfair mb-4">Stay Updated</h2>
-          <p className="mb-6">Subscribe for exclusive offers and new collections</p>
+          <h2 className="text-4xl font-playfair mb-4">{settings.welcomeOffer.enabled ? `${percent}% off your first order` : 'Stay Updated'}</h2>
+          <p className="mb-6">Join the list for early access to new arrivals, best sellers and exclusive offers</p>
           <NewsletterForm source="home" inputPlaceholder="Enter your email" buttonLabel="Subscribe" />
         </div>
       </section>

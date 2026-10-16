@@ -1,14 +1,13 @@
 import { Link } from 'react-router-dom'
 
 export default function ProductCard({ product, isSale, isNew }) {
+  const sale = isSale ?? product.isSale
+  const fresh = isNew ?? product.isNew
+  const badge = sale ? ['sale', 'Sale'] : fresh ? ['new', 'New'] : product.isBest ? ['best', 'Best Seller'] : null
   return (
     <Link to={`/product/${product.id}`}>
       <div className="product-card-premium">
-        {(isSale || isNew) && (
-          <div className={`badge ${isSale ? 'sale' : 'new'}`}>
-            {isSale ? 'Sale' : 'New'}
-          </div>
-        )}
+        {badge && <div className={`badge ${badge[0]}`}>{badge[1]}</div>}
         <div className="product-image-wrapper">
           <img
             src={product.image}
@@ -18,7 +17,7 @@ export default function ProductCard({ product, isSale, isNew }) {
           />
         </div>
         <div className="product-info-premium">
-          <p className="product-category-label">{product.category}</p>
+          <p className="product-category-label">{product.brand || product.category}</p>
           <h3 className="product-name-premium">{product.name}</h3>
           <p className="product-price-premium">
             ${product.price}

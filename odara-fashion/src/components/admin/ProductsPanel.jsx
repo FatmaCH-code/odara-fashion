@@ -95,6 +95,7 @@ export default function ProductsPanel() {
                 <td className="space-x-1">
                   {p.isNew && <span className="admin-badge admin-badge-new">New</span>}
                   {p.isSale && <span className="admin-badge admin-badge-sale">Sale</span>}
+                  {p.isBest && <span className="admin-badge admin-badge-shipped">Best</span>}
                 </td>
                 <td>
                   <div className="flex gap-2 justify-end">

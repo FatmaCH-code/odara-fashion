@@ -6,6 +6,11 @@ import AdminGuard from './components/AdminGuard'
 import Home from './pages/Home'
 import Shop from './pages/Shop'
 import Perfumes from './pages/Perfumes'
+import PerfumeryOils from './pages/PerfumeryOils'
+import Muse from './pages/Muse'
+import Search from './pages/Search'
+import AnnouncementBar from './components/AnnouncementBar'
+import WelcomeOffer from './components/WelcomeOffer'
 import MakePerfume from './pages/MakePerfume'
 import ProductPage from './pages/ProductPage'
 import CartPage from './pages/CartPage'
@@ -23,9 +28,11 @@ function StorefrontChrome({ children }) {
   const isAdmin = pathname.startsWith('/admin')
   return (
     <>
+      {!isAdmin && <AnnouncementBar />}
       {!isAdmin && <Navbar />}
       {children}
       {!isAdmin && <Footer />}
+      {!isAdmin && <WelcomeOffer />}
     </>
   )
 }
@@ -39,6 +46,9 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/perfumes" element={<Perfumes />} />
+          <Route path="/perfumery-oils" element={<PerfumeryOils />} />
+          <Route path="/muse" element={<Muse />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/make-perfume" element={<MakePerfume />} />
           <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/cart" element={<CartPage />} />

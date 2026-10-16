@@ -124,6 +124,12 @@ export default function OrdersPanel() {
                                 <span>${(it.price * it.quantity).toFixed(2)}</span>
                               </div>
                             ))}
+                            {o.discount_code && (
+                              <div className="flex justify-between text-sm text-2C2C2C/60 mt-2">
+                                <span>Discount ({o.discount_code})</span>
+                                <span>−${Number(o.discount_amount || 0).toFixed(2)}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>

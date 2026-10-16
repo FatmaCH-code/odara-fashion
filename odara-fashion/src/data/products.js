@@ -68,11 +68,11 @@ export const fashionProducts = [
 
 // ---- Perfumes (real, from odarafashionplace.com) ----
 export const perfumeProducts = [
-  { id: 101, name: 'Qamrain', price: 59.99, category: 'Fragrances', image: shopify('EE64E6B7-A7A3-4D14-9F21-7B97CC247555.jpg?v=1789706560'), description: "A fruity-rose fragrance, bright and long-lasting." },
-  { id: 102, name: 'Hayman Blend', price: 59.99, originalPrice: 79.99, isSale: true, category: 'Fragrances', image: shopify('2EBD34F8-840F-46BC-8D1B-125F27667BCE.jpg?v=1789706481'), description: "A warm, distinctive blend built for everyday signature wear." },
-  { id: 103, name: 'Lara', price: 39.99, originalPrice: 49.99, isSale: true, category: 'Fragrances', image: shopify('F1DBB496-05CB-4659-B7A1-1ECC53F475CB.jpg?v=1789706387'), description: "A soft, romantic everyday scent with excellent lasting power." },
-  { id: 104, name: 'Aloud Alazraq', price: 54.99, category: 'Dubai Fragrances', isNew: true, image: shopify('FC477C66-B68F-4CC2-85B3-8DE59F565D1B.jpg?v=1789706296'), description: "A rich, resinous oud fragrance inspired by Dubai's oud houses." },
-  { id: 105, name: 'Ana Fayrouz', price: 59.99, category: 'Dubai Fragrances', image: shopify('285798F2-A471-4DB5-94C9-07CA5B2D170D.jpg?v=1789706217'), description: "A vibrant, turquoise-inspired fragrance with a fresh, opulent character." },
+  { id: 101, name: 'Qamrain', price: 59.99, category: 'Perfumes', image: shopify('EE64E6B7-A7A3-4D14-9F21-7B97CC247555.jpg?v=1789706560'), description: "A fruity-rose fragrance, bright and long-lasting." },
+  { id: 102, name: 'Hayman Blend', price: 59.99, originalPrice: 79.99, isSale: true, category: 'Perfumes', image: shopify('2EBD34F8-840F-46BC-8D1B-125F27667BCE.jpg?v=1789706481'), description: "A warm, distinctive blend built for everyday signature wear." },
+  { id: 103, name: 'Lara', price: 39.99, originalPrice: 49.99, isSale: true, category: 'Perfumes', image: shopify('F1DBB496-05CB-4659-B7A1-1ECC53F475CB.jpg?v=1789706387'), description: "A soft, romantic everyday scent with excellent lasting power." },
+  { id: 104, name: 'Aloud Alazraq', price: 54.99, category: 'Perfumes', isNew: true, image: shopify('FC477C66-B68F-4CC2-85B3-8DE59F565D1B.jpg?v=1789706296'), description: "A rich, resinous oud fragrance inspired by Dubai's oud houses." },
+  { id: 105, name: 'Ana Fayrouz', price: 59.99, category: 'Perfumes', image: shopify('285798F2-A471-4DB5-94C9-07CA5B2D170D.jpg?v=1789706217'), description: "A vibrant, turquoise-inspired fragrance with a fresh, opulent character." },
 ]
 
 // ---- Perfumery Oils (renamed from Essential Oils; temporary stock photos) ----

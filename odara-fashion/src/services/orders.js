@@ -14,7 +14,7 @@ const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED === 'true'
 // Checkout Session (via the create-checkout-session Edge Function) and
 // returns a redirect URL. Otherwise it falls back to the old manual-order
 // flow: captured as 'pending', no payment collected, you follow up by hand.
-export async function createOrder({ name, email, phone, address, items, total }) {
+export async function createOrder({ name, email, phone, address, items, promoCode }) {
   if (!isSupabaseConfigured) {
     return null
   }
@@ -27,7 +27,7 @@ export async function createOrder({ name, email, phone, address, items, total })
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ name, email, phone, address, items, total }),
+      body: JSON.stringify({ name, email, phone, address, items, promoCode: promoCode || null }),
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Could not start checkout.')
@@ -43,6 +43,7 @@ export async function createOrder({ name, email, phone, address, items, total })
     p_phone: phone,
     p_address: address,
     p_items: items,
+    p_promo_code: promoCode || null,
   })
   if (error) throw error
   return { order_number: orderNumber }

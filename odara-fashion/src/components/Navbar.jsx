@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShoppingCart, Menu, X } from 'lucide-react'
+import { ShoppingCart, Menu, X, Search } from 'lucide-react'
 import { useCartStore } from '../store/cartStore'
 import odaraEmblem from '../assets/odara-emblem.png'
+import SearchOverlay from './SearchOverlay'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const cartCount = useCartStore(state => state.items.length)
 
   return (
@@ -23,15 +25,20 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex gap-8 items-center">
+        <div className="hidden lg:flex gap-6 xl:gap-8 items-center">
           <Link to="/" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Home</Link>
           <Link to="/shop" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Shop</Link>
+          <Link to="/muse" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Muse</Link>
           <Link to="/perfumes" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Perfumes</Link>
+          <Link to="/perfumery-oils" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Perfumery Oils</Link>
           <Link to="/make-perfume" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Create</Link>
           <Link to="/about" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">About</Link>
         </div>
 
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-6">
+          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="nav-search-btn">
+            <Search className="w-5 h-5 text-2C2C2C hover:text-C9A876" />
+          </button>
           <Link to="/cart" className="relative">
             <ShoppingCart className="w-5 h-5 text-2C2C2C hover:text-C9A876" />
             {cartCount > 0 && (
@@ -43,21 +50,29 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu */}
-        <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        <div className="lg:hidden flex items-center gap-4">
+          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="nav-search-btn">
+            <Search className="w-6 h-6" />
+          </button>
+          <button onClick={() => setIsOpen(!isOpen)} aria-label="Menu">
+            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {isOpen && (
-        <div className="md:hidden border-t border-E8D9C4 p-4 space-y-4">
+        <div className="lg:hidden border-t border-E8D9C4 p-4 space-y-4">
           <Link to="/" className="block text-sm uppercase tracking-widest hover:text-C9A876">Home</Link>
           <Link to="/shop" className="block text-sm uppercase tracking-widest hover:text-C9A876">Shop</Link>
+          <Link to="/muse" className="block text-sm uppercase tracking-widest hover:text-C9A876">Muse</Link>
           <Link to="/perfumes" className="block text-sm uppercase tracking-widest hover:text-C9A876">Perfumes</Link>
+          <Link to="/perfumery-oils" className="block text-sm uppercase tracking-widest hover:text-C9A876">Perfumery Oils</Link>
           <Link to="/make-perfume" className="block text-sm uppercase tracking-widest hover:text-C9A876">Create</Link>
           <Link to="/about" className="block text-sm uppercase tracking-widest hover:text-C9A876">About</Link>
           <Link to="/cart" className="block text-sm uppercase tracking-widest hover:text-C9A876">Cart ({cartCount})</Link>
         </div>
       )}
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </nav>
   )
 }

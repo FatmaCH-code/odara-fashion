@@ -171,3 +171,50 @@ shipped / delivered) — so you can tell "paid, not shipped yet" apart from
   `CatalogueODARA.xlsx` are already in `src/data/products.js`.
 - A few placeholder items (stock-photo hijabs, perfumery oils) are clearly
   marked in that file — replace them anytime from the admin panel.
+
+## Perfumes, Perfumery Oils and The Odara Muse
+
+- **Perfumes** and **Perfumery Oils** are now two separate sections. Perfumes are
+  split by company (Almas, Lattafa, Armaf, Afnan, Rasasi, Al Haramain, Ard Al
+  Zaafaran). When you add/edit a product in the admin, pick the **Perfumes**
+  category and a **Brand** chip appears. Type any other brand name and it gets
+  its own tab automatically. Perfumery Oils have no sub-categories.
+- **The Odara Muse** is a showcase you control from the admin's **Muse** tab:
+  click **Add Look**, pick a product, upload the photo to show for it (a tall
+  photo of a woman wearing the piece looks best), and optionally label it
+  *New Arrival* or *Best Seller*. Use the arrows to reorder and the switch to
+  hide a look. The first 5 shown appear on the home page and all of them on
+  `/muse`. Until you add one, the section automatically shows your newest products.
+- After updating the code, **re-run `sql/schema.sql`** once in Supabase. It adds
+  the `brand` column, the `muse_items` table (for the Muse showcase) and merges the old "Fragrances"/"Dubai Fragrances"
+  categories into "Perfumes". (Don't re-run `seed_products.sql` on a live store —
+  it wipes the products table.)
+- Existing perfumes have no brand yet — open each one in the admin and tick its
+  brand. Until then they show under **All** only.
+
+## Home page, search, New Arrivals, Best Sellers and the 10% pop-up
+
+Everything below is managed from the admin — no code needed.
+
+- **New Arrivals** and **Best Sellers** sections on the home page: open a product
+  in **Admin → Products** and tick **New Arrival** and/or **Best Seller**. Ticked
+  products appear in those sections (newest first) and on `/shop?tag=new` and
+  `/shop?tag=best`. A section with nothing ticked simply doesn't show.
+- **The Odara Muse** (how the pieces look on real customers) sits right before
+  "Create Your Signature Scent". Manage it in **Admin → Muse**.
+- **Shop by Category** tiles are built automatically from your product categories.
+- **Search**: the magnifier in the menu searches names, categories, brands, colors
+  and descriptions. Results page: `/search?q=…`.
+- **10% welcome pop-up + announcement bar**: **Admin → Offers**. Turn each on/off,
+  change the percentage, the code and the delay. Emails the pop-up collects appear
+  under **Subscribers**. The code is applied automatically at checkout and can be used
+  once per email address (checked on the server).
+- **Re-run `sql/schema.sql`** once. It adds the Best Seller flag, the `site_settings`
+  table (Offers), discount columns on orders, and the secure `create_order` /
+  `validate_promo` functions. (`sql/orders_fix.sql` contains just those functions and
+  is only needed if you can't re-run the whole schema.)
+- **If online payments are switched on**, re-deploy the checkout function once so it
+  understands discount codes:
+  `supabase functions deploy create-checkout-session`
+  (I could only check this file's syntax here — test one discounted payment with
+  Stripe's test card before going live.)

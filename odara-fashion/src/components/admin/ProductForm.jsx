@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { adminUploadProductImage } from '../../services/products'
 import { NUMERIC_SIZES, LETTER_SIZES, sortSizes } from '../../utils/sizes'
+import { PERFUME_BRANDS, PERFUME_CATEGORY, OIL_CATEGORY, isPerfumeCategory } from '../../utils/categories'
 
 const EMPTY = {
-  name: '', price: '', originalPrice: '', category: '', images: [],
-  isNew: false, isSale: false, stock: 20, description: '', colors: [], sizes: [],
+  name: '', price: '', originalPrice: '', category: '', brand: '', images: [],
+  isNew: false, isSale: false, isBest: false, stock: 20, description: '', colors: [], sizes: [],
 }
 
 export default function ProductForm({ product, onSave, onCancel, categories }) {
@@ -21,6 +22,10 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
   const [colorName, setColorName] = useState('')
   const [colorHex, setColorHex] = useState('#c9a876')
   const [urlInput, setUrlInput] = useState('')
+
+  // Built-in sections are always offered, even before any product uses them.
+  const categoryOptions = [...new Set([...(categories || []), PERFUME_CATEGORY, OIL_CATEGORY])]
+  const showBrand = isPerfumeCategory(form.category)
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }))
   const setBool = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.checked }))
@@ -115,6 +120,7 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
     try {
       await onSave({
         ...form,
+        brand: isPerfumeCategory(form.category) ? (form.brand || '').trim() : '',
         price: parseFloat(form.price),
         originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,
         stock: parseInt(form.stock) || 0,
@@ -148,11 +154,47 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
 
             <div className="col-span-2">
               <label className="admin-label">Category *</label>
-              <input className="admin-input" value={form.category} onChange={set('category')} required list="admin-categories" />
+              <input className="admin-input" value={form.category} onChange={set('category')} required list="admin-categories" placeholder="Pick one below, or type a new category" />
               <datalist id="admin-categories">
-                {categories.map(c => <option key={c} value={c} />)}
+                {categoryOptions.map(c => <option key={c} value={c} />)}
               </datalist>
+              <div className="admin-size-group mt-2">
+                {[PERFUME_CATEGORY, OIL_CATEGORY].map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`admin-size-chip admin-size-chip-sm ${form.category === c ? 'is-selected' : ''}`}
+                    onClick={() => setForm(f => ({ ...f, category: c }))}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {showBrand && (
+            <div className="col-span-2">
+              <label className="admin-label">Brand (perfume company)</label>
+              <div className="admin-size-group">
+                {PERFUME_BRANDS.map(b => (
+                  <button
+                    key={b}
+                    type="button"
+                    className={`admin-size-chip admin-size-chip-sm ${form.brand === b ? 'is-selected' : ''}`}
+                    onClick={() => setForm(f => ({ ...f, brand: f.brand === b ? '' : b }))}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
+              <input
+                className="admin-input mt-2"
+                value={form.brand || ''}
+                onChange={set('brand')}
+                placeholder="...or type another brand"
+              />
+            </div>
+            )}
 
             <div className="col-span-2">
               <label className="admin-label">Description</label>
@@ -163,9 +205,12 @@ export default function ProductForm({ product, onSave, onCancel, categories }) {
               <label className="admin-label">Stock</label>
               <input type="number" className="admin-input" value={form.stock} onChange={set('stock')} />
             </div>
-            <div className="flex items-end gap-4 pb-2">
+            <div className="flex items-end gap-4 pb-2 flex-wrap">
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.isNew} onChange={setBool('isNew')} /> New
+                <input type="checkbox" checked={form.isNew} onChange={setBool('isNew')} /> New Arrival
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={form.isBest} onChange={setBool('isBest')} /> Best Seller
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={form.isSale} onChange={setBool('isSale')} /> On Sale

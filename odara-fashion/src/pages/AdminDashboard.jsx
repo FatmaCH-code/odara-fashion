@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, NavLink, Routes, Route } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingBag, Mail, Users, LogOut, ExternalLink, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, Sparkles, Percent, ShoppingBag, Mail, Users, LogOut, ExternalLink, Menu, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import OverviewPanel from '../components/admin/OverviewPanel'
 import ProductsPanel from '../components/admin/ProductsPanel'
+import MusePanel from '../components/admin/MusePanel'
+import OffersPanel from '../components/admin/OffersPanel'
 import OrdersPanel from '../components/admin/OrdersPanel'
 import SubscribersPanel from '../components/admin/SubscribersPanel'
 import TeamPanel from '../components/admin/TeamPanel'
@@ -12,6 +14,8 @@ import odaraEmblem from '../assets/odara-emblem.png'
 const NAV_ITEMS = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'Overview' },
   { to: '/admin/products', icon: Package, label: 'Products' },
+  { to: '/admin/muse', icon: Sparkles, label: 'Muse' },
+  { to: '/admin/offers', icon: Percent, label: 'Offers' },
   { to: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
   { to: '/admin/subscribers', icon: Mail, label: 'Subscribers' },
   { to: '/admin/team', icon: Users, label: 'Team' },
@@ -82,6 +86,10 @@ export default function AdminDashboard() {
           <Route path="products" element={<ProductsPanel />} />
           <Route path="products/new" element={<ProductsPanel />} />
           <Route path="products/:id/edit" element={<ProductsPanel />} />
+          <Route path="muse" element={<MusePanel />} />
+          <Route path="muse/new" element={<MusePanel />} />
+          <Route path="muse/:id/edit" element={<MusePanel />} />
+          <Route path="offers" element={<OffersPanel />} />
           <Route path="orders" element={<OrdersPanel />} />
           <Route path="subscribers" element={<SubscribersPanel />} />
           <Route path="team" element={<TeamPanel />} />

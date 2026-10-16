@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { name, email, phone, address, items, total } = await req.json()
+    const { name, email, phone, address, items, promoCode } = await req.json()
 
     if (!items || items.length === 0) {
       return new Response(JSON.stringify({ error: 'Cart is empty.' }), {
@@ -45,6 +45,28 @@ Deno.serve(async (req) => {
 
     const orderNumber = `ODR-${Date.now().toString().slice(-6)}${Math.random().toString(36).slice(2, 7).toUpperCase()}`
 
+    // Totals are calculated here from the items — never trusted from the browser.
+    const subtotal = items.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0)
+
+    // Optional discount code (e.g. the welcome popup's 10%). Validated by the same
+    // database function the checkout page uses, so the rules live in one place.
+    let discount: { code: string; percent: number } | null = null
+    if (promoCode && String(promoCode).trim()) {
+      const { data: promo, error: promoError } = await supabase.rpc('validate_promo', {
+        p_code: promoCode,
+        p_email: email,
+      })
+      if (promoError) throw promoError
+      if (!promo?.valid) {
+        return new Response(JSON.stringify({ error: promo?.message || 'That discount code is not valid.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      discount = { code: promo.code, percent: Number(promo.percent) }
+    }
+    const discountAmount = discount ? Math.round(subtotal * discount.percent) / 100 : 0
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -54,9 +76,11 @@ Deno.serve(async (req) => {
         customer_phone: phone,
         shipping_address: address,
         items,
-        total_amount: total,
+        total_amount: Math.round((subtotal - discountAmount) * 100) / 100,
         status: 'pending',
         payment_status: 'unpaid',
+        discount_code: discount ? discount.code : null,
+        discount_amount: discountAmount,
       })
       .select()
       .single()
@@ -65,7 +89,7 @@ Deno.serve(async (req) => {
 
     const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:5173'
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Record<string, unknown> = {
       mode: 'payment',
       payment_method_types: ['card'],
       customer_email: email,
@@ -82,7 +106,18 @@ Deno.serve(async (req) => {
       cancel_url: `${siteUrl}/checkout`,
       // Stripe can auto-email a receipt on success if enabled in
       // Dashboard → Settings → Customer emails → "Successful payments".
-    })
+    }
+
+    if (discount) {
+      const coupon = await stripe.coupons.create({
+        percent_off: discount.percent,
+        duration: 'once',
+        name: `${discount.code} (${discount.percent}% off)`,
+      })
+      sessionParams.discounts = [{ coupon: coupon.id }]
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams)
 
     await supabase.from('orders').update({ stripe_session_id: session.id }).eq('id', order.id)
 

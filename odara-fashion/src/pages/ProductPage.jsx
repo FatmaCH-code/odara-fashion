@@ -82,7 +82,7 @@ export default function ProductPage() {
 
             {/* Details */}
             <div>
-              <p className="product-category-label">{product.category}</p>
+              <p className="product-category-label">{product.brand ? `${product.brand} · ${product.category}` : product.category}</p>
               <h1 className="text-4xl font-playfair text-2C2C2C mb-4">{product.name}</h1>
               <p className="text-3xl text-C9A876 font-semibold mb-6">
                 ${product.price}

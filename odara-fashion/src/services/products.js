@@ -11,12 +11,14 @@ function fromRow(row) {
     price: Number(row.price),
     originalPrice: row.original_price != null ? Number(row.original_price) : undefined,
     category: row.category,
+    brand: row.brand || '',
     image: images[0] || row.image_url,
     images,
     colors: row.colors || [],
     sizes: row.sizes || [],
     isNew: row.is_new,
     isSale: row.is_sale,
+    isBest: !!row.is_best,
     stock: row.stock,
   }
 }
@@ -29,12 +31,14 @@ function toRow(product) {
     price: product.price,
     original_price: product.originalPrice || null,
     category: product.category,
+    brand: product.brand ? product.brand.trim() : null,
     image_url: images[0] || '',
     images,
     colors: product.colors || [],
     sizes: product.sizes || [],
     is_new: !!product.isNew,
     is_sale: !!product.isSale,
+    is_best: !!product.isBest,
     stock: product.stock ?? 20,
   }
 }
