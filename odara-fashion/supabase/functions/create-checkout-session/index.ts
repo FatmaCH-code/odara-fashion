@@ -91,7 +91,8 @@ Deno.serve(async (req) => {
 
     const sessionParams: Record<string, unknown> = {
       mode: 'payment',
-      payment_method_types: ['card'],
+      // No payment_method_types: Stripe shows the methods the owner turned on in
+      // Dashboard > Settings > Payment methods (cards, Apple Pay, Google Pay, PayPal...).
       customer_email: email,
       line_items: items.map((item) => ({
         price_data: {
