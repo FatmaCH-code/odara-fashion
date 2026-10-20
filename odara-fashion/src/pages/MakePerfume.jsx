@@ -26,33 +26,91 @@ function BottleIcon({ height = 34 }) {
   )
 }
 
-// The big bottle in the "Your Blend" panel: the label shows the perfume's name and size.
-function PerfumeBottle({ name, size }) {
+// Liquid colour follows the chosen scent (rose by default), so the bottle reacts to the customer's choices.
+const LIQUIDS = [
+  [/oud|wood|cedar|patchouli|sandal/i, ['#e2b98a', '#b9814f']],
+  [/amber|saffron|honey/i, ['#f2c27c', '#d98a3c']],
+  [/musk|vanilla|white|cotton|coconut/i, ['#fbeedd', '#efd3b8']],
+  [/lemon|bergamot|grapefruit|citrus|orange|peach/i, ['#fbe8a6', '#f1c96a']],
+  [/lavender|iris|violet|lilac/i, ['#e6d6f2', '#c3a6de']],
+  [/jasmine|floral|rose|peony/i, ['#f9d6cc', '#ecaa99']],
+]
+const liquidFor = (name) => (LIQUIDS.find(([re]) => re.test(name || '')) || [null, ['#f9d6cc', '#ecaa99']])[1]
+
+// The bottle in the "Your Blend" panel: rose-gold cap, thick glass, tinted perfume and a label
+// that shows the perfume's name and size.
+function PerfumeBottle({ name, size, scent }) {
+  const [top, bottom] = liquidFor(scent)
+  const title = (name || 'Your Signature').slice(0, 24)
+  const titleSize = title.length <= 10 ? 21 : title.length <= 16 ? 17 : 13.5
   return (
-    <svg viewBox="0 0 220 280" className="w-full" style={{ maxWidth: 230 }} role="img" aria-label="Your perfume bottle">
+    <svg viewBox="0 0 320 400" className="w-full" style={{ maxWidth: 300, borderRadius: 18 }} role="img" aria-label="Your perfume bottle">
       <defs>
-        <linearGradient id="pbCap" x1="0" x2="1">
-          <stop offset="0" stopColor="#9c7a3c" /><stop offset="0.45" stopColor="#f0d79a" /><stop offset="1" stopColor="#a07f40" />
+        <radialGradient id="pbBg" cx="30%" cy="18%" r="95%">
+          <stop offset="0" stopColor="#fdf3ee" /><stop offset="0.55" stopColor="#f6e3da" /><stop offset="1" stopColor="#ecd0c4" />
+        </radialGradient>
+        <linearGradient id="pbRose" x1="0" x2="1">
+          <stop offset="0" stopColor="#7d4d3a" /><stop offset="0.12" stopColor="#c58c75" /><stop offset="0.3" stopColor="#f6d3be" />
+          <stop offset="0.5" stopColor="#dca78f" /><stop offset="0.76" stopColor="#b97a62" /><stop offset="1" stopColor="#744635" />
         </linearGradient>
-        <linearGradient id="pbLiquid" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stopColor="#f6d3bf" /><stop offset="1" stopColor="#e9b79c" />
+        <linearGradient id="pbLiq" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={top} /><stop offset="1" stopColor={bottom} />
         </linearGradient>
-        <linearGradient id="pbGlass" x1="0" x2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.85" /><stop offset="0.5" stopColor="#ffffff" stopOpacity="0.15" /><stop offset="1" stopColor="#ffffff" stopOpacity="0.6" />
+        <linearGradient id="pbLiqSide" x1="0" x2="1">
+          <stop offset="0" stopColor="#000" stopOpacity="0.1" /><stop offset="0.18" stopColor="#000" stopOpacity="0" />
+          <stop offset="0.82" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity="0.12" />
         </linearGradient>
+        <linearGradient id="pbHL" x1="0" x2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.95" /><stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="pbBase" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.15" /><stop offset="1" stopColor="#fff" stopOpacity="0.7" />
+        </linearGradient>
+        <filter id="pbBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9" /></filter>
+        <filter id="pbBlurS" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="4" /></filter>
       </defs>
-      <ellipse cx="110" cy="268" rx="78" ry="7" fill="#2C2C2C" opacity="0.12" />
-      <rect x="86" y="8" width="48" height="46" rx="4" fill="url(#pbCap)" />
-      <rect x="98" y="54" width="24" height="12" fill="#cdb98f" />
-      <rect x="28" y="66" width="164" height="196" rx="16" fill="url(#pbLiquid)" stroke="#d9c7a8" strokeWidth="3" />
-      <rect x="28" y="66" width="164" height="196" rx="16" fill="url(#pbGlass)" />
-      <rect x="52" y="112" width="116" height="104" fill="#fffdf9" stroke="#d9c7a8" strokeWidth="1" />
-      <text x="110" y="136" textAnchor="middle" fontSize="9" letterSpacing="3" fill="#8a7a63" fontFamily="Outfit, sans-serif">ODARA</text>
-      <line x1="96" y1="144" x2="124" y2="144" stroke={GOLD} strokeWidth="1" />
-      <text x="110" y="172" textAnchor="middle" fontSize={name && name.length > 14 ? 13 : 17} fill="#2C2C2C" fontFamily="'Playfair Display', serif">
-        {(name || 'Your Signature').slice(0, 22)}
-      </text>
-      <text x="110" y="200" textAnchor="middle" fontSize="8" letterSpacing="2" fill="#8a7a63" fontFamily="Outfit, sans-serif">
+
+      <rect width="320" height="400" fill="url(#pbBg)" />
+      {/* soft leaf shadows in the background */}
+      <g filter="url(#pbBlur)" opacity="0.5">
+        <ellipse cx="42" cy="110" rx="16" ry="70" fill="#fff" transform="rotate(-18 42 110)" />
+        <ellipse cx="288" cy="70" rx="14" ry="60" fill="#fff" transform="rotate(22 288 70)" />
+        <ellipse cx="20" cy="250" rx="12" ry="46" fill="#c99a8a" opacity="0.5" transform="rotate(14 20 250)" />
+      </g>
+      {/* floor shadow */}
+      <ellipse cx="160" cy="352" rx="118" ry="11" fill="#5a3a2e" opacity="0.22" filter="url(#pbBlurS)" />
+
+      {/* cap */}
+      <rect x="116" y="22" width="88" height="78" rx="3" fill="url(#pbRose)" />
+      <ellipse cx="160" cy="22" rx="44" ry="5" fill="#f3cdb8" stroke="#b5755f" strokeWidth="0.8" />
+      <rect x="133" y="27" width="6" height="68" fill="#fff" opacity="0.3" />
+      <rect x="116" y="95" width="88" height="5" fill="#5e3828" opacity="0.45" />
+      {/* collar + neck */}
+      <rect x="128" y="100" width="64" height="9" rx="2" fill="url(#pbRose)" />
+      <rect x="134" y="109" width="52" height="14" fill="#fff" opacity="0.55" stroke="#d8c7c0" strokeWidth="0.8" />
+
+      {/* glass body */}
+      <rect x="50" y="120" width="220" height="222" rx="26" fill="#fff" opacity="0.28" />
+      {/* perfume */}
+      <rect x="63" y="140" width="194" height="184" rx="16" fill="url(#pbLiq)" />
+      <rect x="63" y="140" width="194" height="184" rx="16" fill="url(#pbLiqSide)" />
+      <ellipse cx="160" cy="141" rx="97" ry="6" fill="#fff" opacity="0.5" />
+      {/* thick glass base */}
+      <rect x="55" y="314" width="210" height="26" rx="12" fill="url(#pbBase)" />
+      {/* glass edges and highlights */}
+      <rect x="50" y="120" width="220" height="222" rx="26" fill="none" stroke="#cdbbb3" strokeWidth="1.4" />
+      <rect x="55.5" y="125.5" width="209" height="211" rx="22" fill="none" stroke="#fff" strokeOpacity="0.85" strokeWidth="2" />
+      <rect x="57" y="134" width="13" height="190" rx="6" fill="url(#pbHL)" opacity="0.9" />
+      <rect x="252" y="140" width="7" height="176" rx="3" fill="#fff" opacity="0.4" />
+      <polygon points="92,142 120,142 94,322 68,322" fill="#fff" opacity="0.16" />
+      <path d="M76 128 Q160 118 244 128" fill="none" stroke="#fff" strokeOpacity="0.8" strokeWidth="2" strokeLinecap="round" />
+
+      {/* label */}
+      <rect x="92" y="176" width="136" height="96" fill="#fffdf9" opacity="0.95" stroke="#d9c7a8" strokeWidth="0.8" />
+      <text x="160" y="202" textAnchor="middle" fontSize="10" letterSpacing="4" fill="#8a7a63" fontFamily="Outfit, sans-serif">ODARA</text>
+      <line x1="142" y1="211" x2="178" y2="211" stroke="#C9A876" strokeWidth="0.9" />
+      <text x="160" y="241" textAnchor="middle" fontSize={titleSize} fill="#2C2C2C" fontFamily="'Playfair Display', serif">{title}</text>
+      <text x="160" y="261" textAnchor="middle" fontSize="8.5" letterSpacing="2.5" fill="#8a7a63" fontFamily="Outfit, sans-serif">
         {size ? size.toUpperCase().replace(/\s*ML/i, ' ML') : ''}
       </text>
     </svg>
@@ -293,7 +351,7 @@ export default function MakePerfume() {
               <div className="bg-F5EFE0 border border-E8D9C4 rounded-2xl p-7 lg:sticky lg:top-28 text-center">
                 <h3 className="text-3xl font-playfair text-2C2C2C mb-4">Your Blend</h3>
                 <div className="flex justify-center mb-6">
-                  <PerfumeBottle name={pick.name.trim()} size={sizeOpt?.label} />
+                  <PerfumeBottle name={pick.name.trim()} size={sizeOpt?.label} scent={`${baseOpt?.name || ''} ${twistOpt?.name || ''}`} />
                 </div>
 
                 <dl className="text-sm space-y-2 text-left mb-5">
