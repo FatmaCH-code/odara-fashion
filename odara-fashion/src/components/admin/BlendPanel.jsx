@@ -5,11 +5,11 @@ import { adminUploadProductImage } from '../../services/products'
 
 // hasPrice: show a price box. hasImage: show a photo box.
 const GROUPS = [
-  { key: 'bases', title: 'Base oils', hint: 'Step 1 — required. No price here: the bottle size sets the starting price.', prefix: 'b', nameField: 'name', hasPrice: false, hasImage: true },
-  { key: 'topNotes', title: 'Top notes (citrus & herbs)', hint: 'Step 2 — optional. The price is added to the blend.', prefix: 't', nameField: 'name', hasPrice: true, hasImage: true },
-  { key: 'middleNotes', title: 'Middle notes (florals)', hint: 'Step 3 — optional. The price is added to the blend.', prefix: 'm', nameField: 'name', hasPrice: true, hasImage: true },
-  { key: 'baseNotes', title: 'Base notes (woody & amber)', hint: 'Step 4 — optional. The price is added to the blend.', prefix: 'n', nameField: 'name', hasPrice: true, hasImage: true },
-  { key: 'sizes', title: 'Bottle sizes', hint: 'The price of the bottle. Notes chosen by the customer are added on top.', prefix: 's', nameField: 'label', hasPrice: true, hasImage: false },
+  { key: 'bases', title: 'Main scents', hint: 'Step 1 — “Choose your main scent”. Required. No price: only the bottle size has a price.', prefix: 'b', nameField: 'name', hasPrice: false, hasImage: true },
+  { key: 'topNotes', title: 'Twist scents — group A (citrus & herbs)', hint: 'Step 2 — “Add a twist”. Customers pick one twist from groups A, B and C together. No price.', prefix: 't', nameField: 'name', hasPrice: false, hasImage: true },
+  { key: 'middleNotes', title: 'Twist scents — group B (florals)', hint: 'Shown in the same “Add a twist” step. No price.', prefix: 'm', nameField: 'name', hasPrice: false, hasImage: true },
+  { key: 'baseNotes', title: 'Twist scents — group C (woody & amber)', hint: 'Shown in the same “Add a twist” step. No price.', prefix: 'n', nameField: 'name', hasPrice: false, hasImage: true },
+  { key: 'sizes', title: 'Bottle sizes', hint: 'Step 4 — “Select your bottle”. This is the ONLY price of the perfume.', prefix: 's', nameField: 'label', hasPrice: true, hasImage: false },
 ]
 
 const Toggle = ({ on, onChange, label }) => (
@@ -64,6 +64,7 @@ export default function BlendPanel() {
             active: r.active !== false,
           }
           if (g.hasImage) out.image = /^(https?:\/\/|\/)/.test(r.image || '') ? r.image : ''
+          if (g.hasImage) out.tagline = String(r.tagline || '').trim().slice(0, 40)
           return out
         })
         .filter(r => r[g.nameField])
@@ -85,7 +86,7 @@ export default function BlendPanel() {
     <form onSubmit={save} className="max-w-2xl">
       <h1 className="text-2xl font-playfair mb-2">Signature scent builder</h1>
       <p className="text-2C2C2C/60 text-sm mb-8">
-        Everything customers can pick on <strong>Create Your Signature Scent</strong>. Add a photo to each scent, and switch an
+        Everything customers can pick on <strong>Create Your Signature Scent</strong>. Add a photo and a short description to each scent, and switch an
         item off to hide it without deleting it. Prices are checked on the server when the order is placed.
       </p>
 
@@ -111,12 +112,23 @@ export default function BlendPanel() {
                     <input type="file" accept="image/*" className="sr-only" disabled={!!uploading} onChange={(e) => { upload(g, i, e.target.files?.[0]); e.target.value = '' }} />
                   </label>
                 )}
-                <input
-                  className="admin-input flex-1"
-                  placeholder={g.key === 'sizes' ? 'e.g. 50ml' : 'Name'}
-                  value={row[g.nameField] || ''}
-                  onChange={(e) => update(g.key, i, { [g.nameField]: e.target.value })}
-                />
+                <div className="flex-1 space-y-1">
+                  <input
+                    className="admin-input w-full"
+                    placeholder={g.key === 'sizes' ? 'e.g. 50ml' : 'Name'}
+                    value={row[g.nameField] || ''}
+                    onChange={(e) => update(g.key, i, { [g.nameField]: e.target.value })}
+                  />
+                  {g.hasImage && (
+                    <input
+                      className="admin-input w-full"
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
+                      placeholder="Short description, e.g. Deep & woody"
+                      value={row.tagline || ''}
+                      onChange={(e) => update(g.key, i, { tagline: e.target.value })}
+                    />
+                  )}
+                </div>
                 {g.hasPrice && (
                   <div className="flex items-center gap-1">
                     <span className="text-sm text-2C2C2C/50">{g.key === 'sizes' ? '$' : '+$'}</span>

@@ -74,7 +74,7 @@ BEGIN
     v_blend := v_item->'blend';
 
     IF v_blend IS NOT NULL AND jsonb_typeof(v_blend) = 'object' THEN
-      -- Custom fragrance blend: price = base oil + chosen notes + bottle size extra
+      -- Custom fragrance blend: price = the bottle size only (scents and notes carry no price)
       v_recipe := '[]'::jsonb;
 
       v_opt := public.blend_option(v_cfg, 'bases', v_blend->>'base');
@@ -86,25 +86,29 @@ BEGIN
       IF v_k IS NOT NULL THEN
         v_opt := public.blend_option(v_cfg, 'topNotes', v_k);
         IF v_opt IS NULL THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
-        v_price := v_price + (v_opt->>'price')::numeric;
         v_recipe := v_recipe || to_jsonb('Top note: ' || (v_opt->>'name'));
       END IF;
       v_k := v_blend->>'middleNote';
       IF v_k IS NOT NULL THEN
         v_opt := public.blend_option(v_cfg, 'middleNotes', v_k);
         IF v_opt IS NULL THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
-        v_price := v_price + (v_opt->>'price')::numeric;
         v_recipe := v_recipe || to_jsonb('Middle note: ' || (v_opt->>'name'));
       END IF;
       v_k := v_blend->>'baseNote';
       IF v_k IS NOT NULL THEN
         v_opt := public.blend_option(v_cfg, 'baseNotes', v_k);
         IF v_opt IS NULL THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
-        v_price := v_price + (v_opt->>'price')::numeric;
         v_recipe := v_recipe || to_jsonb('Base note: ' || (v_opt->>'name'));
       END IF;
 
-      -- Bottle size: required whenever the admin has at least one active size.
+      -- Scent character (not priced)
+      v_k := v_blend->>'character';
+      IF v_k IS NOT NULL THEN
+        IF v_k NOT IN ('softer', 'balanced', 'bolder') THEN RAISE EXCEPTION 'Invalid scent character.'; END IF;
+        v_recipe := v_recipe || to_jsonb('Character: ' || initcap(v_k));
+      END IF;
+
+      -- Bottle size sets the price. Required whenever the admin has at least one active size.
       v_k := v_blend->>'size';
       IF v_k IS NOT NULL THEN
         v_opt := public.blend_option(v_cfg, 'sizes', v_k);
