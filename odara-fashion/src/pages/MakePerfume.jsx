@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Check, Leaf, Scale, Sun } from 'lucide-react'
 import { useCartStore } from '../store/cartStore'
 import { useUiStore } from '../store/uiStore'
-import { loadBlendConfig, DEFAULT_BLEND } from '../services/blend'
+import { loadBlendConfig, DEFAULT_BLEND, DEFAULT_LABELS } from '../services/blend'
 
 const CHARACTERS = [
   { id: 'softer', label: 'Softer', Icon: Leaf },
@@ -81,6 +81,7 @@ export default function MakePerfume() {
     ...visible(cfg.middleNotes).map(o => ({ ...o, slot: 'middleNote' })),
     ...visible(cfg.baseNotes).map(o => ({ ...o, slot: 'baseNote' })),
   ], [cfg])
+  const L = { ...DEFAULT_LABELS, ...(cfg.labels || {}) }
   const bases = visible(cfg.bases)
   const sizes = visible(cfg.sizes)
 
@@ -117,7 +118,7 @@ export default function MakePerfume() {
 
   const handleAddToCart = () => {
     if (!baseOpt) {
-      showToast('Choose your main scent to start your blend.', { type: 'error', title: 'Main scent needed' })
+      showToast(`${L.base} to start your blend.`, { type: 'error', title: 'Choice needed' })
       return
     }
     if (subs.length > 0 && !subOpt) {
@@ -181,7 +182,7 @@ export default function MakePerfume() {
             <div className="lg:col-span-2 space-y-10">
 
               <section>
-                {heading(1, 'Choose your main scent')}
+                {heading(1, L.base)}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {bases.map(o => (
                     <button key={o.id} type="button" onClick={() => setPick(p => ({ ...p, base: String(o.id), sub: String(p.base) === String(o.id) ? p.sub : null }))}
@@ -217,7 +218,7 @@ export default function MakePerfume() {
               )}
 
               <section>
-                {heading(2, 'Add a twist', 'Choose a second scent, or keep it simple.')}
+                {heading(2, L.twist, 'Choose a second scent, or keep it simple.')}
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                   {twists.map(o => (
                     <button key={o.id} type="button" onClick={() => setPick(p => ({ ...p, twist: String(p.twist) === String(o.id) ? null : String(o.id) }))}
@@ -240,7 +241,7 @@ export default function MakePerfume() {
               </section>
 
               <section>
-                {heading(3, 'Choose your scent character', 'Tell us how you would like your blend to feel.')}
+                {heading(3, L.character, 'Tell us how you would like your blend to feel.')}
                 <div className="grid grid-cols-3 gap-3">
                   {CHARACTERS.map(({ id, label, Icon }) => (
                     <button key={id} type="button" onClick={() => setPick(p => ({ ...p, character: id }))}
@@ -255,7 +256,7 @@ export default function MakePerfume() {
 
               {sizes.length > 0 && (
                 <section>
-                  {heading(4, 'Select your bottle')}
+                  {heading(4, L.size)}
                   <div className="grid grid-cols-3 gap-3">
                     {sizes.map((o, i) => (
                       <button key={o.id} type="button" onClick={() => setPick(p => ({ ...p, size: o.id }))}
@@ -273,7 +274,7 @@ export default function MakePerfume() {
               )}
 
               <section>
-                {heading(5, 'Name your creation')}
+                {heading(5, L.name)}
                 <input
                   type="text"
                   maxLength={30}
@@ -296,7 +297,7 @@ export default function MakePerfume() {
                 </div>
 
                 <dl className="text-sm space-y-2 text-left mb-5">
-                  <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Main scent</dt><dd className="text-2C2C2C text-right">{baseOpt ? (subOpt ? `${baseOpt.name} — ${subOpt.name}` : baseOpt.name) : '—'}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">{L.baseName}</dt><dd className="text-2C2C2C text-right">{baseOpt ? (subOpt ? `${baseOpt.name} — ${subOpt.name}` : baseOpt.name) : '—'}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Added twist</dt><dd className="text-2C2C2C">{twistOpt?.name || 'None'}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Character</dt><dd className="text-2C2C2C">{charOpt?.label}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Bottle</dt><dd className="text-2C2C2C">{sizeOpt?.label || '—'}</dd></div>

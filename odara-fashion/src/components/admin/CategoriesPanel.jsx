@@ -21,6 +21,8 @@ export default function CategoriesPanel() {
   const [renameValue, setRenameValue] = useState('')
   const [open, setOpen] = useState(null)           // category whose products are expanded
   const [busy, setBusy] = useState(false)
+  const [deleting, setDeleting] = useState(null)     // { name, count } while the "delete category" box is open
+  const [moveTo, setMoveTo] = useState('Uncategorized')
 
   const load = async () => {
     try {
@@ -70,9 +72,26 @@ export default function CategoriesPanel() {
     }, `"${oldName}" is now "${value}" on every product.`)
   }
 
-  const removeCategory = (name) => {
-    if (!confirm(`Delete the empty category "${name}"?`)) return
-    run(() => adminSaveExtraCategories(extras.filter(x => !same(x, name))), `Category "${name}" deleted.`)
+  // Delete a category. Its products are NEVER deleted — they move to another category.
+  const askDelete = (name, count) => {
+    if (count === 0) {
+      if (!confirm(`Delete the empty category "${name}"?`)) return
+      run(() => adminSaveExtraCategories(extras.filter(x => !same(x, name))), `Category "${name}" deleted.`)
+      return
+    }
+    const other = names.find(n => !same(n, name) && !BUILT_IN.some(b => same(b, n)))
+    setMoveTo(other || 'Uncategorized')
+    setDeleting({ name, count })
+  }
+
+  const confirmDelete = () => {
+    const { name, count } = deleting
+    const target = moveTo.trim() || 'Uncategorized'
+    run(async () => {
+      if (count > 0) await adminRenameCategory(name, target)
+      await adminSaveExtraCategories(extras.filter(x => !same(x, name)))
+      setDeleting(null)
+    }, `Category "${name}" deleted — its ${count} product${count === 1 ? '' : 's'} moved to "${target}".`)
   }
 
   const moveProduct = (productId, category) =>
@@ -86,12 +105,30 @@ export default function CategoriesPanel() {
         <h1 className="text-2xl font-playfair">Categories ({rows.length})</h1>
       </div>
       <p className="text-sm text-2C2C2C/60 mb-6 max-w-2xl">
-        Rename a category and every product in it follows. Open a category to move single products to another one.
+        Rename a category and every product in it follows. Open a category to move single products to another one. The bin deletes a category but always keeps its products.
         “{PERFUME_CATEGORY}” and “{OIL_CATEGORY}” are built in (they power the Perfumes and Oils pages), so they can't be renamed or deleted.
       </p>
 
       {error && <div className="admin-notice mb-4">{error}</div>}
       {message && <div className="admin-notice mb-4" style={{ background: '#ecf6ee', color: '#2f6b3d' }}>{message}</div>}
+
+      {deleting && (
+        <div className="admin-panel-card mb-6 max-w-xl" style={{ border: '1px solid #e7c9c2' }}>
+          <h2 className="font-playfair text-lg mb-1">Delete “{deleting.name}”?</h2>
+          <p className="text-sm text-2C2C2C/70 mb-4">
+            The category disappears, but its {deleting.count} product{deleting.count === 1 ? '' : 's'} stay in your shop.
+            Choose where {deleting.count === 1 ? 'it' : 'they'} should go:
+          </p>
+          <select className="admin-input mb-2" value={names.some(n => same(n, moveTo)) ? moveTo : 'Uncategorized'} onChange={(e) => setMoveTo(e.target.value)}>
+            {names.filter(n => !same(n, deleting.name)).map(n => <option key={n} value={n}>{n}</option>)}
+            {!names.some(n => same(n, 'Uncategorized')) && <option value="Uncategorized">Uncategorized (new)</option>}
+          </select>
+          <div className="flex gap-2 mt-3">
+            <button type="button" className="admin-btn-primary" disabled={busy} onClick={confirmDelete}>Delete category, keep products</button>
+            <button type="button" className="admin-btn-secondary" disabled={busy} onClick={() => setDeleting(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={addCategory} className="flex gap-2 mb-6 max-w-md">
         <input className="admin-input flex-1" placeholder="New category (e.g. Scarves)" value={newName} onChange={(e) => setNewName(e.target.value)} />
@@ -125,9 +162,7 @@ export default function CategoriesPanel() {
                     {!r.builtIn && renaming !== r.name && (
                       <div className="flex gap-2 justify-end">
                         <button className="admin-icon-btn" title="Rename" onClick={() => { setRenaming(r.name); setRenameValue(r.name) }}><Pencil className="w-4 h-4" /></button>
-                        {r.items.length === 0 && (
-                          <button className="admin-icon-btn admin-icon-btn-danger" title="Delete" onClick={() => removeCategory(r.name)}><Trash2 className="w-4 h-4" /></button>
-                        )}
+                        <button className="admin-icon-btn admin-icon-btn-danger" title="Delete category (products are kept)" onClick={() => askDelete(r.name, r.items.length)}><Trash2 className="w-4 h-4" /></button>
                       </div>
                     )}
                   </td>

@@ -135,9 +135,6 @@ export default function Home() {
         </Reveal>
       </section>
 
-      {/* Real customer reviews — hidden until there is at least one approved review */}
-      <ReviewsSection />
-
       {/* Perfumes */}
       {perfumes.length > 0 && (
         <section className="home-section home-section-alt">
@@ -195,6 +192,9 @@ export default function Home() {
           <NewsletterForm source="home" inputPlaceholder="Enter your email" buttonLabel="Subscribe" />
         </div>
       </section>
+
+      {/* Real customer reviews — small strip at the very bottom, hidden until there is an approved review */}
+      <ReviewsSection />
     </div>
   )
 }

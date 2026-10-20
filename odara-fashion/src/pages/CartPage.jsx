@@ -60,14 +60,14 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>{shipping > 0 ? `$${shipping.toFixed(2)}` : 'Free'}</span>
+                    <span>{shipping === null ? 'Calculated at checkout' : shipping > 0 ? `$${shipping.toFixed(2)}` : 'Free'}</span>
                   </div>
-                  {shipping > 0 && freeOver > 0 && (
+                  {shipping !== 0 && freeOver > 0 && (
                     <p className="text-xs text-2C2C2C/60">Add ${(freeOver - subtotal).toFixed(2)} more for free shipping.</p>
                   )}
                   <div className="border-t border-D4C4B0 pt-4 flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span className="text-C9A876">${(subtotal + shipping).toFixed(2)}</span>
+                    <span className="text-C9A876">${(subtotal + (shipping || 0)).toFixed(2)}</span>
                   </div>
                 </div>
                 <Link to="/checkout" className="btn-gold w-full mb-3 block text-center">Proceed to Checkout</Link>

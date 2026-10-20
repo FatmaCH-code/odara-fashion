@@ -50,11 +50,12 @@ export default function CheckoutPage() {
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
   const discount = promo ? Math.round(subtotal * promo.percent) / 100 : 0
-  const shipping = shippingFor(subtotal - discount, settings.shipping)
-  const total = subtotal - discount + shipping
-  const freeOver = Number(settings.shipping.freeOver || 0)
-  const canFreeShip = freeOver > 0 && Number(settings.shipping.flatFee || 0) > 0
   const isUS = form.country === 'United States'
+  // Shipping depends on how far the address is from Ohio (null until a US state is picked).
+  const shipping = shippingFor(subtotal - discount, settings.shipping, { country: form.country, state: isUS ? form.state : '' })
+  const total = subtotal - discount + (shipping || 0)
+  const freeOver = Number(settings.shipping.freeOver || 0)
+  const canFreeShip = freeOver > 0 && (settings.shipping.byZone !== false || Number(settings.shipping.flatFee || 0) > 0)
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }))
 
@@ -182,8 +183,8 @@ export default function CheckoutPage() {
               )}
 
               <div className="checkout-row"><span>Subtotal</span><span>{money(subtotal)}</span></div>
-              <div className="checkout-row"><span>Shipping</span><span>{shipping > 0 ? money(shipping) : 'Free'}</span></div>
-              {canFreeShip && shipping > 0 && (
+              <div className="checkout-row"><span>Shipping</span><span>{shipping === null ? 'Select your state' : shipping > 0 ? money(shipping) : 'Free'}</span></div>
+              {canFreeShip && shipping !== 0 && (
                 <p className="checkout-hint">Add {money(freeOver - (subtotal - discount))} more for free shipping.</p>
               )}
               <div className="checkout-row checkout-total"><span>Total</span><span>{money(total)}</span></div>

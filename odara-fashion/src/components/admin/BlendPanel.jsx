@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Plus, Trash2, ImagePlus } from 'lucide-react'
-import { loadBlendConfig, adminSaveBlendConfig } from '../../services/blend'
+import { loadBlendConfig, adminSaveBlendConfig, DEFAULT_LABELS } from '../../services/blend'
 import { adminUploadProductImage } from '../../services/products'
 
 // hasPrice: show a price box. hasImage: show a photo box. hasSubs: each item can have types (e.g. Oud -> Royal).
@@ -77,7 +77,8 @@ export default function BlendPanel() {
   const save = async (e) => {
     e.preventDefault()
     setError(''); setMessage('')
-    const clean = {}
+    const clean = { labels: {} }
+    for (const k of Object.keys(DEFAULT_LABELS)) clean.labels[k] = cleanText((cfg.labels || {})[k], 60) || DEFAULT_LABELS[k]
     for (const g of GROUPS) {
       clean[g.key] = cfg[g.key]
         .map(r => {
@@ -118,9 +119,30 @@ export default function BlendPanel() {
         item off to hide it without deleting it. Prices are checked on the server when the order is placed.
       </p>
 
+      <div className="admin-panel-card mb-6">
+        <h2 className="font-playfair text-lg">Section names</h2>
+        <p className="text-xs text-2C2C2C/50 mb-4">The titles customers see on the Signature page. Rename them however you like (for example “Choose your oud”).</p>
+        <div className="space-y-3">
+          {[
+            ['base', 'Step 1 title (main scents)'],
+            ['baseName', 'Short name used in the summary (e.g. “Main scent”)'],
+            ['twist', 'Step 2 title (twists)'],
+            ['character', 'Step 3 title (softer / balanced / bolder)'],
+            ['size', 'Step 4 title (bottle sizes)'],
+            ['name', 'Step 5 title (name your creation)'],
+          ].map(([k, label]) => (
+            <div key={k}>
+              <label className="admin-label">{label}</label>
+              <input className="admin-input w-full" maxLength={60} value={(cfg.labels || {})[k] ?? DEFAULT_LABELS[k]}
+                onChange={(e) => setCfg(c => ({ ...c, labels: { ...(c.labels || {}), [k]: e.target.value } }))} />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {GROUPS.map(g => (
         <div key={g.key} className="admin-panel-card mb-6">
-          <h2 className="font-playfair text-lg">{g.title}</h2>
+          <h2 className="font-playfair text-lg">{g.key === 'bases' ? ((cfg.labels && cfg.labels.base) || g.title) : g.key === 'sizes' ? ((cfg.labels && cfg.labels.size) || g.title) : g.title}</h2>
           <p className="text-xs text-2C2C2C/50 mb-4">{g.hint}</p>
           <div className="space-y-4">
             {cfg[g.key].map((row, i) => (

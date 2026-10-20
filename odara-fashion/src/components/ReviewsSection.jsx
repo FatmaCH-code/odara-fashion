@@ -16,7 +16,7 @@ export default function ReviewsSection() {
   if (reviews.length === 0) return null
 
   const { count, average } = summarize(reviews)
-  const latest = reviews.slice(0, 6)
+  const latest = reviews.slice(0, 3)
 
   return (
     <section className="home-section reviews-section">
@@ -24,7 +24,7 @@ export default function ReviewsSection() {
         <Reveal className="reviews-head">
           <h2 className="section-head-title">Loved by our customers</h2>
           <p className="reviews-score">
-            <StarRating value={average} size={20} />
+            <StarRating value={average} size={15} />
             <strong>{average.toFixed(1)}</strong>
             <span>from {count} review{count === 1 ? '' : 's'}</span>
           </p>
@@ -36,7 +36,7 @@ export default function ReviewsSection() {
             return (
               <Reveal key={r.id} delay={i * 80} className="review-card">
                 <Quote className="review-quote" />
-                <StarRating value={r.rating} size={15} />
+                <StarRating value={r.rating} size={12} />
                 <p className="review-body">{r.body}</p>
                 <p className="review-by">
                   <strong>{r.name}</strong>

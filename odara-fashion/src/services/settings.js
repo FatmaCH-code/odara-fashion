@@ -6,7 +6,8 @@ export const DEFAULT_SETTINGS = {
   announcement: { enabled: true, text: '' },
   welcomeOffer: { enabled: true, percent: 10, code: 'WELCOME10', delaySeconds: 6 },
   // Flat fee per order; orders at/above `freeOver` ship free (0 = never free). Fee 0 = free shipping for everyone.
-  shipping: { flatFee: 10, freeOver: 0 },
+  // byZone: price by distance from Ohio (zones[0..4] = Zone 1..5, `international` = outside the US); off = the flat fee for everyone.
+  shipping: { flatFee: 10, freeOver: 0, byZone: true, zones: [5.99, 7.99, 9.99, 12.99, 15.99], international: 29.99 },
 }
 
 const merge = (v) => ({

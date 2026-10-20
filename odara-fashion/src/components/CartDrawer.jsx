@@ -27,9 +27,9 @@ export default function CartDrawer() {
   if (!open) return null
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
-  const shipping = shippingFor(subtotal, settings.shipping)
+  const shipping = shippingFor(subtotal, settings.shipping)   // null = depends on the address (asked at checkout)
   const freeOver = Number(settings.shipping.freeOver || 0)
-  const canFreeShip = freeOver > 0 && Number(settings.shipping.flatFee || 0) > 0
+  const canFreeShip = freeOver > 0 && (settings.shipping.byZone !== false || Number(settings.shipping.flatFee || 0) > 0)
   const remaining = Math.max(0, freeOver - subtotal)
   const progress = canFreeShip ? Math.min(100, (subtotal / freeOver) * 100) : 0
   const count = items.reduce((s, i) => s + i.quantity, 0)
@@ -85,8 +85,8 @@ export default function CartDrawer() {
 
             <footer className="drawer-foot">
               <div className="drawer-row"><span>Subtotal</span><span>{money(subtotal)}</span></div>
-              <div className="drawer-row drawer-row-muted"><span>Shipping</span><span>{shipping > 0 ? money(shipping) : 'Free'}</span></div>
-              <Link to="/checkout" className="btn-gold drawer-checkout" onClick={close}>Checkout · {money(subtotal + shipping)}</Link>
+              <div className="drawer-row drawer-row-muted"><span>Shipping</span><span>{shipping === null ? 'Calculated at checkout' : shipping > 0 ? money(shipping) : 'Free'}</span></div>
+              <Link to="/checkout" className="btn-gold drawer-checkout" onClick={close}>Checkout · {money(subtotal + (shipping || 0))}</Link>
               <Link to="/cart" className="drawer-viewbag" onClick={close}>View bag</Link>
             </footer>
           </>

@@ -5,7 +5,18 @@ import { baseOils, topNotes, middleNotes, baseNotes } from '../data/blendOptions
 // (Must match the default inside sql/signature_builder.sql.)
 const withDefaults = (list) => list.map(o => ({ id: String(o.id), name: o.name, price: o.price, image: '', tagline: '', active: true }))
 
+// Names shown to customers on the Signature page (edited in Admin -> Signature -> "Section names").
+export const DEFAULT_LABELS = {
+  base: 'Choose your main scent',
+  baseName: 'Main scent',
+  twist: 'Add a twist',
+  character: 'Choose your scent character',
+  size: 'Select your bottle',
+  name: 'Name your creation',
+}
+
 export const DEFAULT_BLEND = {
+  labels: DEFAULT_LABELS,
   bases: withDefaults(baseOils).map(o => ({ ...o, price: 0 })),  // base oils carry no price
   topNotes: withDefaults(topNotes).map(o => ({ ...o, price: 0 })),
   middleNotes: withDefaults(middleNotes).map(o => ({ ...o, price: 0 })),
@@ -18,6 +29,7 @@ export const DEFAULT_BLEND = {
 }
 
 const merge = (v) => ({
+  labels: { ...DEFAULT_LABELS, ...((v && v.labels) || {}) },
   bases: (v && Array.isArray(v.bases)) ? v.bases : DEFAULT_BLEND.bases,
   topNotes: (v && Array.isArray(v.topNotes)) ? v.topNotes : DEFAULT_BLEND.topNotes,
   middleNotes: (v && Array.isArray(v.middleNotes)) ? v.middleNotes : DEFAULT_BLEND.middleNotes,
