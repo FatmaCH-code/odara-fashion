@@ -3,17 +3,17 @@ import { baseOils, topNotes, middleNotes, baseNotes } from '../data/blendOptions
 
 // What "Create Your Signature Scent" offers until the admin saves their own in Admin → Signature.
 // (Must match the default inside sql/signature_builder.sql.)
-const withDefaults = (list) => list.map(o => ({ id: String(o.id), name: o.name, price: o.price, active: true }))
+const withDefaults = (list) => list.map(o => ({ id: String(o.id), name: o.name, price: o.price, image: '', active: true }))
 
 export const DEFAULT_BLEND = {
-  bases: withDefaults(baseOils),
+  bases: withDefaults(baseOils).map(o => ({ ...o, price: 0 })),  // base oils carry no price
   topNotes: withDefaults(topNotes),
   middleNotes: withDefaults(middleNotes),
   baseNotes: withDefaults(baseNotes),
   sizes: [
-    { id: 'small', label: '30ml', price: 0, active: true },
-    { id: 'medium', label: '50ml', price: 10, active: true },
-    { id: 'large', label: '100ml', price: 20, active: true },
+    { id: 'small', label: '30ml', price: 34.99, active: true },
+    { id: 'medium', label: '50ml', price: 44.99, active: true },
+    { id: 'large', label: '100ml', price: 54.99, active: true },
   ],
 }
 

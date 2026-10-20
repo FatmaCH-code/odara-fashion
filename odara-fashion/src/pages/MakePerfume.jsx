@@ -36,7 +36,7 @@ export default function MakePerfume() {
 
   const total = () => {
     let t = 0
-    for (const s of STEPS) if (pick[s.slot]) t += Number(find(s.list, pick[s.slot])?.price) || 0
+    for (const s of STEPS) if (s.slot !== 'base' && pick[s.slot]) t += Number(find(s.list, pick[s.slot])?.price) || 0
     return t + (Number(sizeOpt?.price) || 0)
   }
 
@@ -50,6 +50,10 @@ export default function MakePerfume() {
     }
     if (sizes.length > 0 && !sizeOpt) {
       showToast('Choose a bottle size.', { type: 'error', title: 'Size needed' })
+      return
+    }
+    if (total() <= 0) {
+      showToast('This blend is not available yet. Please try again soon.', { type: 'error', title: 'Unavailable' })
       return
     }
     addToCart({
@@ -106,9 +110,12 @@ export default function MakePerfume() {
                       <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">{s.title}</label>
                       <div className="grid grid-cols-2 gap-3">
                         {items.map(o => (
-                          <button key={o.id} type="button" onClick={() => choose(s, String(o.id))} className={card(String(pick[s.slot]) === String(o.id))}>
-                            <div className="font-semibold text-2C2C2C">{o.name}</div>
-                            <div className="text-sm text-2C2C2C/60">{s.slot === 'base' ? `$${money(o.price)}` : `+$${money(o.price)}`}</div>
+                          <button key={o.id} type="button" onClick={() => choose(s, String(o.id))} className={`${card(String(pick[s.slot]) === String(o.id))} ${o.image ? '!p-0 overflow-hidden' : ''}`}>
+                            {o.image && <img src={o.image} alt={o.name} loading="lazy" className="w-full aspect-square object-cover" />}
+                            <div className={o.image ? 'p-3' : ''}>
+                              <div className="font-semibold text-2C2C2C">{o.name}</div>
+                              {s.slot !== 'base' && Number(o.price) > 0 && <div className="text-sm text-2C2C2C/60">+${money(o.price)}</div>}
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -123,7 +130,7 @@ export default function MakePerfume() {
                       {sizes.map(o => (
                         <button key={o.id} type="button" onClick={() => setPick({ ...pick, size: o.id })} className={`${card(pick.size === o.id)} text-center`}>
                           <div className="font-semibold text-2C2C2C">{o.label}</div>
-                          <div className="text-sm text-2C2C2C/60">{Number(o.price) > 0 ? `+$${money(o.price)}` : 'Included'}</div>
+                          <div className="text-sm text-2C2C2C/60">${money(o.price)}</div>
                         </button>
                       ))}
                     </div>

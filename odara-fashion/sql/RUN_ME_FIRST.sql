@@ -18,11 +18,11 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS best_order INT DEFAULT 0;
 
 CREATE OR REPLACE FUNCTION public.default_blend_config() RETURNS jsonb
 LANGUAGE sql IMMUTABLE AS $cfg$
-SELECT '{"bases":[{"id":"1","name":"Oud Pure","price":34.99,"active":true},{"id":"2","name":"Sandalwood","price":29.99,"active":true},{"id":"3","name":"Amber Musk","price":34.99,"active":true},{"id":"4","name":"Floral Blend","price":29.99,"active":true}],
+SELECT '{"bases":[{"id":"1","name":"Oud Pure","price":0,"active":true},{"id":"2","name":"Sandalwood","price":0,"active":true},{"id":"3","name":"Amber Musk","price":0,"active":true},{"id":"4","name":"Floral Blend","price":0,"active":true}],
 "topNotes":[{"id":"101","name":"Lemon","price":5,"active":true},{"id":"102","name":"Bergamot","price":5,"active":true},{"id":"103","name":"Grapefruit","price":5,"active":true},{"id":"104","name":"Lavender","price":5,"active":true}],
 "middleNotes":[{"id":"201","name":"Rose","price":8,"active":true},{"id":"202","name":"Jasmine","price":8,"active":true},{"id":"203","name":"Iris","price":8,"active":true},{"id":"204","name":"Peach","price":8,"active":true}],
 "baseNotes":[{"id":"301","name":"Vanilla","price":6,"active":true},{"id":"302","name":"Musk","price":6,"active":true},{"id":"303","name":"Cedar","price":6,"active":true},{"id":"304","name":"Patchouli","price":6,"active":true}],
-"sizes":[{"id":"small","label":"30ml","price":0,"active":true},{"id":"medium","label":"50ml","price":10,"active":true},{"id":"large","label":"100ml","price":20,"active":true}]}'::jsonb
+"sizes":[{"id":"small","label":"30ml","price":34.99,"active":true},{"id":"medium","label":"50ml","price":44.99,"active":true},{"id":"large","label":"100ml","price":54.99,"active":true}]}'::jsonb
 $cfg$;
 
 -- Looks up ONE active option (by id) inside one list of the menu; NULL if missing/hidden.
@@ -90,7 +90,7 @@ BEGIN
 
       v_opt := public.blend_option(v_cfg, 'bases', v_blend->>'base');
       IF v_opt IS NULL THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
-      v_price := (v_opt->>'price')::numeric;
+      v_price := 0;   -- base oils carry no price: the bottle size sets the starting price
       v_recipe := v_recipe || to_jsonb('Base oil: ' || (v_opt->>'name'));
 
       v_k := v_blend->>'topNote';
@@ -125,6 +125,8 @@ BEGIN
       ELSIF EXISTS (SELECT 1 FROM jsonb_array_elements(v_cfg->'sizes') e WHERE coalesce((e->>'active')::boolean, true)) THEN
         RAISE EXCEPTION 'Please choose a bottle size.';
       END IF;
+
+      IF v_price <= 0 THEN RAISE EXCEPTION 'This blend is not available yet.'; END IF;
 
       -- Always labelled as a blend, so a blend can never be passed off as a real product on the order.
       v_name := CASE WHEN nullif(trim(coalesce(v_item->>'name', '')), '') IS NULL
