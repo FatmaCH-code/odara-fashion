@@ -68,6 +68,22 @@ CREATE TABLE IF NOT EXISTS profiles (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- "Is the signed-in user an admin?" — used by every admin rule below.
+-- It must be SECURITY DEFINER (runs with the owner's rights, skipping row-level security):
+-- a rule on "profiles" that itself queried "profiles" made Postgres stop with
+-- "infinite recursion detected in policy for relation profiles".
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+$$;
+REVOKE ALL ON FUNCTION public.is_admin() FROM public;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
+
 -- Auto-create a profile row whenever someone signs up (defaults to NOT admin —
 -- you flip is_admin to true yourself for the one account that should manage the store).
 CREATE OR REPLACE FUNCTION handle_new_user()
@@ -161,19 +177,19 @@ CREATE POLICY "Public can read products" ON products
 DROP POLICY IF EXISTS "Admins can insert products" ON products;
 CREATE POLICY "Admins can insert products" ON products
   FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can update products" ON products;
 CREATE POLICY "Admins can update products" ON products
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete products" ON products;
 CREATE POLICY "Admins can delete products" ON products
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Users can read their own profile" ON profiles;
@@ -183,13 +199,13 @@ CREATE POLICY "Users can read their own profile" ON profiles
 DROP POLICY IF EXISTS "Admins can read all profiles" ON profiles;
 CREATE POLICY "Admins can read all profiles" ON profiles
   FOR SELECT USING (
-    EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
 CREATE POLICY "Admins can update any profile" ON profiles
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Public can read testimonials" ON testimonials;
@@ -203,13 +219,13 @@ CREATE POLICY "Anyone can create an order" ON orders
 DROP POLICY IF EXISTS "Admins can read orders" ON orders;
 CREATE POLICY "Admins can read orders" ON orders
   FOR SELECT USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can update orders" ON orders;
 CREATE POLICY "Admins can update orders" ON orders
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Anyone can create cart items" ON cart_items;
@@ -219,7 +235,7 @@ CREATE POLICY "Anyone can create cart items" ON cart_items
 DROP POLICY IF EXISTS "Admins can read cart items" ON cart_items;
 CREATE POLICY "Admins can read cart items" ON cart_items
   FOR SELECT USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Anyone can subscribe" ON newsletter_subscribers;
@@ -229,13 +245,13 @@ CREATE POLICY "Anyone can subscribe" ON newsletter_subscribers
 DROP POLICY IF EXISTS "Admins can read subscribers" ON newsletter_subscribers;
 CREATE POLICY "Admins can read subscribers" ON newsletter_subscribers
   FOR SELECT USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete subscribers" ON newsletter_subscribers;
 CREATE POLICY "Admins can delete subscribers" ON newsletter_subscribers
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    public.is_admin()
   );
 
 -- ---------------------------------------------------------------------------
@@ -251,14 +267,14 @@ DROP POLICY IF EXISTS "Admins can upload product images" ON storage.objects;
 CREATE POLICY "Admins can upload product images" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'product-images'
-    AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    AND public.is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete product images" ON storage.objects;
 CREATE POLICY "Admins can delete product images" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'product-images'
-    AND EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
+    AND public.is_admin()
   );
 
 -- ---------------------------------------------------------------------------
@@ -284,19 +300,19 @@ CREATE POLICY "Public can read active muse items" ON muse_items
 
 DROP POLICY IF EXISTS "Admins can read all muse items" ON muse_items;
 CREATE POLICY "Admins can read all muse items" ON muse_items
-  FOR SELECT USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+  FOR SELECT USING (public.is_admin());
 
 DROP POLICY IF EXISTS "Admins can insert muse items" ON muse_items;
 CREATE POLICY "Admins can insert muse items" ON muse_items
-  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+  FOR INSERT WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "Admins can update muse items" ON muse_items;
 CREATE POLICY "Admins can update muse items" ON muse_items
-  FOR UPDATE USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+  FOR UPDATE USING (public.is_admin());
 
 DROP POLICY IF EXISTS "Admins can delete muse items" ON muse_items;
 CREATE POLICY "Admins can delete muse items" ON muse_items
-  FOR DELETE USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+  FOR DELETE USING (public.is_admin());
 
 -- ---------------------------------------------------------------------------
 -- BEST SELLER flag (admin ticks it on a product -> appears in "Best Sellers")
@@ -321,11 +337,11 @@ CREATE POLICY "Public can read site settings" ON site_settings
 
 DROP POLICY IF EXISTS "Admins can insert site settings" ON site_settings;
 CREATE POLICY "Admins can insert site settings" ON site_settings
-  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+  FOR INSERT WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "Admins can update site settings" ON site_settings;
 CREATE POLICY "Admins can update site settings" ON site_settings
-  FOR UPDATE USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true));
+  FOR UPDATE USING (public.is_admin());
 
 -- ---------------------------------------------------------------------------
 -- DISCOUNT CODES on orders + the two secure functions the checkout uses.
@@ -333,6 +349,7 @@ CREATE POLICY "Admins can update site settings" ON site_settings
 -- ---------------------------------------------------------------------------
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code VARCHAR(40);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(10, 2) DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_amount DECIMAL(10, 2) DEFAULT 0;
 
 -- Old 5-argument version is replaced by the one below (which adds the promo code).
 DROP FUNCTION IF EXISTS public.create_order(text, text, text, text, jsonb);
@@ -374,8 +391,123 @@ BEGIN
 END;
 $$;
 
--- Creates an order. The total (and any discount) is calculated HERE, on the server,
--- from the cart items — the browser can't change what it costs.
+-- Prices a cart ON THE SERVER. The browser only says "which product, how many, which
+-- color/size"; the price always comes from the products table, so editing the request
+-- can't lower what something costs. Used by create_order() below and by the Stripe
+-- checkout function. Custom blends are priced from their ingredients.
+CREATE OR REPLACE FUNCTION public.price_cart(p_items jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_item     jsonb;
+  v_out      jsonb := '[]'::jsonb;
+  v_subtotal numeric(10,2) := 0;
+  v_qty      int;
+  v_id       bigint;
+  v_prod     record;
+  v_price    numeric(10,2);
+  v_name     text;
+  v_color    text;
+  v_size     text;
+  v_blend    jsonb;
+  v_k        text;
+  -- Custom-blend ingredient prices (keep in sync with src/pages/MakePerfume.jsx)
+  v_bases    constant jsonb := '{"1":34.99,"2":29.99,"3":34.99,"4":29.99}';
+  v_tops     constant jsonb := '{"101":5,"102":5,"103":5,"104":5}';
+  v_mids     constant jsonb := '{"201":8,"202":8,"203":8,"204":8}';
+  v_bnotes   constant jsonb := '{"301":6,"302":6,"303":6,"304":6}';
+BEGIN
+  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
+    RAISE EXCEPTION 'Your cart is empty.';
+  END IF;
+  IF jsonb_array_length(p_items) > 50 THEN
+    RAISE EXCEPTION 'Too many different items in one order.';
+  END IF;
+
+  FOR v_item IN SELECT value FROM jsonb_array_elements(p_items) LOOP
+    IF jsonb_typeof(v_item) <> 'object' THEN
+      RAISE EXCEPTION 'Invalid cart.';
+    END IF;
+
+    BEGIN v_qty := (v_item->>'quantity')::int; EXCEPTION WHEN others THEN v_qty := 0; END;
+    IF v_qty IS NULL OR v_qty < 1 OR v_qty > 99 THEN
+      RAISE EXCEPTION 'Invalid quantity in your cart.';
+    END IF;
+
+    v_color := left(nullif(trim(coalesce(v_item->>'color', '')), ''), 40);
+    v_size  := left(nullif(trim(coalesce(v_item->>'size', '')), ''), 20);
+    v_blend := v_item->'blend';
+
+    IF v_blend IS NOT NULL AND jsonb_typeof(v_blend) = 'object' THEN
+      -- Custom fragrance blend: price = base oil + any chosen notes
+      v_k := v_blend->>'base';
+      IF v_k IS NULL OR NOT (v_bases ? v_k) THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
+      v_price := (v_bases->>v_k)::numeric;
+
+      v_k := v_blend->>'topNote';
+      IF v_k IS NOT NULL THEN
+        IF NOT (v_tops ? v_k) THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
+        v_price := v_price + (v_tops->>v_k)::numeric;
+      END IF;
+      v_k := v_blend->>'middleNote';
+      IF v_k IS NOT NULL THEN
+        IF NOT (v_mids ? v_k) THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
+        v_price := v_price + (v_mids->>v_k)::numeric;
+      END IF;
+      v_k := v_blend->>'baseNote';
+      IF v_k IS NOT NULL THEN
+        IF NOT (v_bnotes ? v_k) THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
+        v_price := v_price + (v_bnotes->>v_k)::numeric;
+      END IF;
+
+      -- Always labelled as a blend, so a blend can never be passed off as a real product on the order.
+      v_name := CASE WHEN nullif(trim(coalesce(v_item->>'name', '')), '') IS NULL
+                     THEN 'Custom Fragrance Blend'
+                     ELSE left('Custom Blend: ' || trim(v_item->>'name'), 120) END;
+      v_out := v_out || jsonb_build_array(jsonb_build_object(
+        'name', v_name, 'price', v_price, 'quantity', v_qty,
+        'category', 'Custom Blend', 'blend', v_blend));
+    ELSE
+      BEGIN v_id := (v_item->>'id')::bigint; EXCEPTION WHEN others THEN v_id := NULL; END;
+      SELECT id, name, price, stock INTO v_prod FROM products WHERE id = v_id;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'An item in your cart is no longer available — please remove it and try again.';
+      END IF;
+      IF v_prod.stock IS NOT NULL AND v_prod.stock < v_qty THEN
+        IF v_prod.stock <= 0 THEN
+          RAISE EXCEPTION '"%" is sold out.', v_prod.name;
+        END IF;
+        RAISE EXCEPTION 'Only % of "%" left in stock.', v_prod.stock, v_prod.name;
+      END IF;
+
+      v_price := v_prod.price;
+      -- Name is rebuilt from the real product name + the chosen color/size (never taken from the browser).
+      IF v_color IS NOT NULL OR v_size IS NOT NULL THEN
+        v_name := v_prod.name || ' (' ||
+                  concat_ws(', ', v_color, CASE WHEN v_size IS NOT NULL THEN 'Size ' || v_size END) || ')';
+      ELSIF left(coalesce(v_item->>'name', ''), length(v_prod.name)) = v_prod.name THEN
+        v_name := left(v_item->>'name', 150);   -- older carts that already had "(Red, Size M)" in the name
+      ELSE
+        v_name := v_prod.name;
+      END IF;
+
+      v_out := v_out || jsonb_build_array(jsonb_build_object(
+        'id', v_prod.id, 'name', v_name, 'price', v_price, 'quantity', v_qty,
+        'color', v_color, 'size', v_size));
+    END IF;
+
+    v_subtotal := v_subtotal + v_price * v_qty;
+  END LOOP;
+
+  RETURN jsonb_build_object('items', v_out, 'subtotal', v_subtotal);
+END;
+$$;
+
+-- Creates an order. Prices, total and any discount are calculated HERE, on the server —
+-- the browser can't change what anything costs.
 CREATE OR REPLACE FUNCTION public.create_order(
   p_name text, p_email text, p_phone text, p_address text, p_items jsonb,
   p_promo_code text DEFAULT NULL
@@ -386,18 +518,23 @@ SET search_path = public
 AS $$
 DECLARE
   v_number   text;
+  v_priced   jsonb;
   v_subtotal numeric(10,2);
   v_discount numeric(10,2) := 0;
   v_code     text := NULL;
   v_promo    jsonb;
+  v_ship_cfg jsonb;
+  v_flat     numeric;
+  v_free     numeric;
+  v_shipping numeric(10,2) := 0;
 BEGIN
-  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
-    RAISE EXCEPTION 'Cart is empty';
+  IF coalesce(trim(p_name), '') = '' OR coalesce(trim(p_address), '') = ''
+     OR p_email IS NULL OR position('@' in p_email) < 2 THEN
+    RAISE EXCEPTION 'Please fill in your name, email and address.';
   END IF;
 
-  SELECT COALESCE(SUM((i->>'price')::numeric * (i->>'quantity')::int), 0)
-    INTO v_subtotal
-    FROM jsonb_array_elements(p_items) i;
+  v_priced   := public.price_cart(p_items);
+  v_subtotal := (v_priced->>'subtotal')::numeric;
 
   IF p_promo_code IS NOT NULL AND length(trim(p_promo_code)) > 0 THEN
     v_promo := public.validate_promo(p_promo_code, p_email);
@@ -408,23 +545,92 @@ BEGIN
     v_code := v_promo->>'code';
   END IF;
 
+  -- Shipping (set in Admin → Offers & shipping; defaults to a flat $10 if never saved)
+  SELECT value->'shipping' INTO v_ship_cfg FROM site_settings WHERE key = 'storefront';
+  v_flat := least(greatest(coalesce((v_ship_cfg->>'flatFee')::numeric, 10), 0), 500);
+  v_free := coalesce((v_ship_cfg->>'freeOver')::numeric, 0);
+  IF v_free > 0 AND (v_subtotal - v_discount) >= v_free THEN
+    v_shipping := 0;
+  ELSE
+    v_shipping := round(v_flat, 2);
+  END IF;
+
   v_number := 'ODR-' || right(((extract(epoch from clock_timestamp()) * 1000)::bigint)::text, 6)
                      || upper(substr(md5(random()::text), 1, 5));
 
   INSERT INTO orders (order_number, customer_name, customer_email, customer_phone,
                       shipping_address, items, total_amount, status, payment_status,
-                      discount_code, discount_amount)
-  VALUES (v_number, p_name, p_email, p_phone, p_address, p_items, v_subtotal - v_discount,
-          'pending', 'unpaid', v_code, v_discount);
+                      discount_code, discount_amount, shipping_amount)
+  VALUES (v_number, trim(p_name), trim(p_email), p_phone, trim(p_address), v_priced->'items',
+          v_subtotal - v_discount + v_shipping, 'pending', 'unpaid', v_code, v_discount, v_shipping);
 
   RETURN v_number;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION public.validate_promo(text, text) FROM public;
-GRANT EXECUTE ON FUNCTION public.validate_promo(text, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.validate_promo(text, text) TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION public.price_cart(jsonb) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.price_cart(jsonb) TO service_role;
 REVOKE ALL ON FUNCTION public.create_order(text, text, text, text, jsonb, text) FROM public;
-GRANT EXECUTE ON FUNCTION public.create_order(text, text, text, text, jsonb, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.create_order(text, text, text, text, jsonb, text) TO anon, authenticated, service_role;
 
 -- Customers no longer insert into "orders" directly (the function above does it safely).
 DROP POLICY IF EXISTS "Anyone can create an order" ON orders;
+
+-- ---------------------------------------------------------------------------
+-- NEW ARRIVALS / BEST SELLERS — the order the admin arranges them in
+-- (Admin → New & Best). The is_new / is_best flags already exist; these just
+-- remember the position. 0 = "not placed yet" (shown after the placed ones).
+-- ---------------------------------------------------------------------------
+ALTER TABLE products ADD COLUMN IF NOT EXISTS new_order INT DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS best_order INT DEFAULT 0;
+
+-- ---------------------------------------------------------------------------
+-- CUSTOMER REVIEWS — genuine ones only.
+--   * Anyone can SUBMIT a review, but it is saved as "pending" and is invisible
+--     until an admin approves it (Admin → Reviews).
+--   * Visitors can only ever READ approved reviews.
+--   * Admins can also add a review themselves (e.g. a real message a customer sent
+--     on WhatsApp/Instagram) — those are marked source = 'admin'.
+-- product_id NULL = a review of the store in general.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reviews (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  product_id BIGINT REFERENCES products(id) ON DELETE CASCADE,
+  name VARCHAR(80) NOT NULL CHECK (char_length(trim(name)) BETWEEN 1 AND 80),
+  rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  body TEXT NOT NULL CHECK (char_length(trim(body)) BETWEEN 3 AND 1000),
+  status VARCHAR(12) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  source VARCHAR(12) NOT NULL DEFAULT 'customer' CHECK (source IN ('customer', 'admin')),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS reviews_status_idx ON reviews (status, created_at DESC);
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can read approved reviews" ON reviews;
+CREATE POLICY "Public can read approved reviews" ON reviews
+  FOR SELECT USING (status = 'approved');
+
+DROP POLICY IF EXISTS "Admins can read all reviews" ON reviews;
+CREATE POLICY "Admins can read all reviews" ON reviews
+  FOR SELECT USING (public.is_admin());
+
+-- A visitor can only create a PENDING, customer-sourced review — never an approved one.
+DROP POLICY IF EXISTS "Anyone can submit a pending review" ON reviews;
+CREATE POLICY "Anyone can submit a pending review" ON reviews
+  FOR INSERT WITH CHECK (status = 'pending' AND source = 'customer');
+
+DROP POLICY IF EXISTS "Admins can add reviews" ON reviews;
+CREATE POLICY "Admins can add reviews" ON reviews
+  FOR INSERT WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can update reviews" ON reviews;
+CREATE POLICY "Admins can update reviews" ON reviews
+  FOR UPDATE USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can delete reviews" ON reviews;
+CREATE POLICY "Admins can delete reviews" ON reviews
+  FOR DELETE USING (public.is_admin());

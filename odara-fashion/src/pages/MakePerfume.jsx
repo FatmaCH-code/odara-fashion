@@ -1,85 +1,80 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
+import { useUiStore } from '../store/uiStore'
+import { loadBlendConfig, DEFAULT_BLEND } from '../services/blend'
 
-const baseOils = [
-  { id: 1, name: 'Oud Pure', price: 34.99 },
-  { id: 2, name: 'Sandalwood', price: 29.99 },
-  { id: 3, name: 'Amber Musk', price: 34.99 },
-  { id: 4, name: 'Floral Blend', price: 29.99 },
+const STEPS = [
+  { slot: 'base', list: 'bases', title: 'Step 1: Choose Base Oil', label: 'Base' },
+  { slot: 'topNote', list: 'topNotes', title: 'Step 2: Add Top Notes (Citrus & Herbs)', label: 'Top Note' },
+  { slot: 'middleNote', list: 'middleNotes', title: 'Step 3: Add Middle Notes (Florals)', label: 'Middle Note' },
+  { slot: 'baseNote', list: 'baseNotes', title: 'Step 4: Add Base Notes (Woody & Amber)', label: 'Base Note' },
 ]
 
-const topNotes = [
-  { id: 101, name: 'Lemon', price: 5 },
-  { id: 102, name: 'Bergamot', price: 5 },
-  { id: 103, name: 'Grapefruit', price: 5 },
-  { id: 104, name: 'Lavender', price: 5 },
-]
-
-const middleNotes = [
-  { id: 201, name: 'Rose', price: 8 },
-  { id: 202, name: 'Jasmine', price: 8 },
-  { id: 203, name: 'Iris', price: 8 },
-  { id: 204, name: 'Peach', price: 8 },
-]
-
-const baseNotes = [
-  { id: 301, name: 'Vanilla', price: 6 },
-  { id: 302, name: 'Musk', price: 6 },
-  { id: 303, name: 'Cedar', price: 6 },
-  { id: 304, name: 'Patchouli', price: 6 },
-]
+const visible = (list) => (list || []).filter(o => o.active !== false)
+const money = (n) => (Number(n) || 0).toFixed(2)
 
 export default function MakePerfume() {
-  const [customBlend, setCustomBlend] = useState({
-    name: '',
-    base: null,
-    topNote: null,
-    middleNote: null,
-    baseNote: null,
-    bottle: 'small'
-  })
-
+  const [cfg, setCfg] = useState(DEFAULT_BLEND)
+  const [pick, setPick] = useState({ name: '', base: null, topNote: null, middleNote: null, baseNote: null, size: null })
   const addToCart = useCartStore(state => state.addItem)
+  const openCart = useUiStore(state => state.openCart)
+  const showToast = useUiStore(state => state.showToast)
 
-  const calculatePrice = () => {
-    let price = 0
-    if (customBlend.base) {
-      price += baseOils.find(o => o.id === customBlend.base)?.price || 0
-    }
-    if (customBlend.topNote) {
-      price += topNotes.find(o => o.id === customBlend.topNote)?.price || 0
-    }
-    if (customBlend.middleNote) {
-      price += middleNotes.find(o => o.id === customBlend.middleNote)?.price || 0
-    }
-    if (customBlend.baseNote) {
-      price += baseNotes.find(o => o.id === customBlend.baseNote)?.price || 0
-    }
-    return price.toFixed(2)
+  useEffect(() => {
+    loadBlendConfig().then(c => {
+      setCfg(c)
+      // Smallest/first visible size is preselected.
+      const first = visible(c.sizes)[0]
+      setPick(p => ({ ...p, size: first ? first.id : null }))
+    })
+  }, [])
+
+  const find = (list, id) => visible(cfg[list]).find(o => String(o.id) === String(id))
+  const sizes = visible(cfg.sizes)
+  const sizeOpt = sizes.find(s => s.id === pick.size)
+
+  const total = () => {
+    let t = 0
+    for (const s of STEPS) if (pick[s.slot]) t += Number(find(s.list, pick[s.slot])?.price) || 0
+    return t + (Number(sizeOpt?.price) || 0)
   }
+
+  // Click again to unselect an optional note.
+  const choose = (s, id) => setPick(p => ({ ...p, [s.slot]: s.slot !== 'base' && p[s.slot] === id ? null : id }))
 
   const handleAddToCart = () => {
-    if (!customBlend.base) {
-      alert('Please select a base oil')
+    if (!pick.base) {
+      showToast('Choose a base oil to start your blend.', { type: 'error', title: 'Base oil needed' })
       return
     }
-
-    const item = {
-      id: Date.now(),
-      name: customBlend.name || 'Custom Fragrance Blend',
-      price: parseFloat(calculatePrice()),
-      category: 'Custom Blend',
-      quantity: 1
+    if (sizes.length > 0 && !sizeOpt) {
+      showToast('Choose a bottle size.', { type: 'error', title: 'Size needed' })
+      return
     }
-
-    addToCart(item)
-    alert('Added to cart! Your custom blend will be prepared within 7 days.')
+    addToCart({
+      id: Date.now(),
+      name: pick.name || 'Custom Fragrance Blend',
+      price: Number(money(total())),
+      category: 'Custom Blend',
+      // The recipe travels with the order; the server prices it again from the admin's settings.
+      blend: {
+        base: pick.base,
+        ...(pick.topNote ? { topNote: pick.topNote } : {}),
+        ...(pick.middleNote ? { middleNote: pick.middleNote } : {}),
+        ...(pick.baseNote ? { baseNote: pick.baseNote } : {}),
+        ...(sizeOpt ? { size: sizeOpt.id } : {}),
+      },
+      quantity: 1,
+    })
+    showToast('Your custom blend is in the bag — it is prepared within 7 days.', { title: 'Added to bag' })
+    openCart()
   }
+
+  const card = (selected) => `p-4 text-left border-2 transition ${selected ? 'border-C9A876 bg-F5EFE0' : 'border-E8D9C4 hover:border-C9A876'}`
 
   return (
     <div>
-      {/* Header */}
       <div className="bg-F5EFE0 py-12">
         <div className="container-premium">
           <h1 className="text-5xl font-playfair text-2C2C2C mb-4">Create Your Signature Scent</h1>
@@ -87,180 +82,70 @@ export default function MakePerfume() {
         </div>
       </div>
 
-      {/* Blending Studio */}
       <div className="section-premium">
         <div className="container-premium">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Blender */}
             <div className="lg:col-span-2">
               <div className="bg-white p-8 border border-E8D9C4">
-                {/* Blend Name */}
                 <div className="mb-8">
-                  <label className="block text-sm uppercase tracking-widest font-semibold mb-3 text-2C2C2C">
-                    Name Your Fragrance
-                  </label>
+                  <label className="block text-sm uppercase tracking-widest font-semibold mb-3 text-2C2C2C">Name Your Fragrance</label>
                   <input
                     type="text"
                     placeholder="e.g., My Signature, Evening Rose..."
-                    value={customBlend.name}
-                    onChange={(e) => setCustomBlend({...customBlend, name: e.target.value})}
+                    value={pick.name}
+                    onChange={(e) => setPick({ ...pick, name: e.target.value })}
                     className="w-full p-4 border border-E8D9C4 text-sm"
                   />
                 </div>
 
-                {/* Base Selection */}
-                <div className="mb-8">
-                  <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">
-                    Step 1: Choose Base Oil
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {baseOils.map(oil => (
-                      <button
-                        key={oil.id}
-                        onClick={() => setCustomBlend({...customBlend, base: oil.id})}
-                        className={`p-4 text-left border-2 transition ${
-                          customBlend.base === oil.id
-                            ? 'border-C9A876 bg-F5EFE0'
-                            : 'border-E8D9C4 hover:border-C9A876'
-                        }`}
-                      >
-                        <div className="font-semibold text-2C2C2C">{oil.name}</div>
-                        <div className="text-sm text-2C2C2C/60">${oil.price}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {STEPS.map(s => {
+                  const items = visible(cfg[s.list])
+                  if (!items.length) return null
+                  return (
+                    <div className="mb-8" key={s.slot}>
+                      <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">{s.title}</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {items.map(o => (
+                          <button key={o.id} type="button" onClick={() => choose(s, String(o.id))} className={card(String(pick[s.slot]) === String(o.id))}>
+                            <div className="font-semibold text-2C2C2C">{o.name}</div>
+                            <div className="text-sm text-2C2C2C/60">{s.slot === 'base' ? `$${money(o.price)}` : `+$${money(o.price)}`}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
 
-                {/* Top Notes */}
-                <div className="mb-8">
-                  <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">
-                    Step 2: Add Top Notes (Citrus & Herbs)
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {topNotes.map(note => (
-                      <button
-                        key={note.id}
-                        onClick={() => setCustomBlend({...customBlend, topNote: note.id})}
-                        className={`p-3 text-left border-2 transition ${
-                          customBlend.topNote === note.id
-                            ? 'border-C9A876 bg-F5EFE0'
-                            : 'border-E8D9C4 hover:border-C9A876'
-                        }`}
-                      >
-                        <div className="font-semibold text-2C2C2C">{note.name}</div>
-                      </button>
-                    ))}
+                {sizes.length > 0 && (
+                  <div>
+                    <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">Bottle Size</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {sizes.map(o => (
+                        <button key={o.id} type="button" onClick={() => setPick({ ...pick, size: o.id })} className={`${card(pick.size === o.id)} text-center`}>
+                          <div className="font-semibold text-2C2C2C">{o.label}</div>
+                          <div className="text-sm text-2C2C2C/60">{Number(o.price) > 0 ? `+$${money(o.price)}` : 'Included'}</div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-
-                {/* Middle Notes */}
-                <div className="mb-8">
-                  <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">
-                    Step 3: Add Middle Notes (Florals)
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {middleNotes.map(note => (
-                      <button
-                        key={note.id}
-                        onClick={() => setCustomBlend({...customBlend, middleNote: note.id})}
-                        className={`p-3 text-left border-2 transition ${
-                          customBlend.middleNote === note.id
-                            ? 'border-C9A876 bg-F5EFE0'
-                            : 'border-E8D9C4 hover:border-C9A876'
-                        }`}
-                      >
-                        <div className="font-semibold text-2C2C2C">{note.name}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Base Notes */}
-                <div className="mb-8">
-                  <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">
-                    Step 4: Add Base Notes (Woody & Amber)
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {baseNotes.map(note => (
-                      <button
-                        key={note.id}
-                        onClick={() => setCustomBlend({...customBlend, baseNote: note.id})}
-                        className={`p-3 text-left border-2 transition ${
-                          customBlend.baseNote === note.id
-                            ? 'border-C9A876 bg-F5EFE0'
-                            : 'border-E8D9C4 hover:border-C9A876'
-                        }`}
-                      >
-                        <div className="font-semibold text-2C2C2C">{note.name}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bottle Size */}
-                <div>
-                  <label className="block text-sm uppercase tracking-widest font-semibold mb-4 text-2C2C2C">
-                    Bottle Size
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { size: 'small', ml: '30ml', price: '+$0' },
-                      { size: 'medium', ml: '50ml', price: '+$10' },
-                      { size: 'large', ml: '100ml', price: '+$20' }
-                    ].map(option => (
-                      <button
-                        key={option.size}
-                        onClick={() => setCustomBlend({...customBlend, bottle: option.size})}
-                        className={`p-4 text-center border-2 transition ${
-                          customBlend.bottle === option.size
-                            ? 'border-C9A876 bg-F5EFE0'
-                            : 'border-E8D9C4 hover:border-C9A876'
-                        }`}
-                      >
-                        <div className="font-semibold text-2C2C2C">{option.ml}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* Summary */}
             <div className="lg:col-span-1">
               <div className="bg-F5EFE0 p-8 sticky top-32">
                 <h3 className="text-2xl font-playfair text-2C2C2C mb-6">Your Blend</h3>
-
                 <div className="space-y-4 mb-8">
-                  {customBlend.base && (
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm uppercase tracking-widest text-2C2C2C/60">Base</p>
-                        <p className="font-semibold text-2C2C2C">{baseOils.find(o => o.id === customBlend.base)?.name}</p>
-                      </div>
+                  {STEPS.map(s => pick[s.slot] && find(s.list, pick[s.slot]) && (
+                    <div key={s.slot}>
+                      <p className="text-sm uppercase tracking-widest text-2C2C2C/60">{s.label}</p>
+                      <p className="font-semibold text-2C2C2C">{find(s.list, pick[s.slot]).name}</p>
                     </div>
-                  )}
-                  {customBlend.topNote && (
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm uppercase tracking-widest text-2C2C2C/60">Top Note</p>
-                        <p className="font-semibold text-2C2C2C">{topNotes.find(o => o.id === customBlend.topNote)?.name}</p>
-                      </div>
-                    </div>
-                  )}
-                  {customBlend.middleNote && (
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm uppercase tracking-widest text-2C2C2C/60">Middle Note</p>
-                        <p className="font-semibold text-2C2C2C">{middleNotes.find(o => o.id === customBlend.middleNote)?.name}</p>
-                      </div>
-                    </div>
-                  )}
-                  {customBlend.baseNote && (
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm uppercase tracking-widest text-2C2C2C/60">Base Note</p>
-                        <p className="font-semibold text-2C2C2C">{baseNotes.find(o => o.id === customBlend.baseNote)?.name}</p>
-                      </div>
+                  ))}
+                  {sizeOpt && (
+                    <div>
+                      <p className="text-sm uppercase tracking-widest text-2C2C2C/60">Bottle</p>
+                      <p className="font-semibold text-2C2C2C">{sizeOpt.label}</p>
                     </div>
                   )}
                 </div>
@@ -268,19 +153,13 @@ export default function MakePerfume() {
                 <div className="border-t border-D4C4B0 pt-6 mb-6">
                   <div className="flex justify-between mb-4">
                     <span className="text-2C2C2C/70">Blend Total</span>
-                    <span className="font-playfair text-2xl text-C9A876">${calculatePrice()}</span>
+                    <span className="font-playfair text-2xl text-C9A876">${money(total())}</span>
                   </div>
-                  <p className="text-sm text-2C2C2C/60 mb-4">
-                    Your custom fragrance will be expertly blended and delivered within 7 business days.
-                  </p>
-                  <button onClick={handleAddToCart} className="btn-gold w-full">
-                    Add to Cart
-                  </button>
+                  <p className="text-sm text-2C2C2C/60 mb-4">Your custom fragrance will be expertly blended and delivered within 7 business days.</p>
+                  <button onClick={handleAddToCart} className="btn-gold w-full">Add to Cart</button>
                 </div>
 
-                <Link to="/perfumes" className="btn-outline w-full text-center block">
-                  Browse Perfumes
-                </Link>
+                <Link to="/perfumes" className="btn-outline w-full text-center block">Browse Perfumes</Link>
               </div>
             </div>
           </div>

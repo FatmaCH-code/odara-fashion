@@ -1,6 +1,7 @@
 import { useEffect, useState, Fragment } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { adminListOrders, adminUpdateOrderStatus } from '../../services/orders'
+import { blendRecipe } from '../../data/blendOptions'
 
 const STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
 
@@ -119,11 +120,24 @@ export default function OrdersPanel() {
                           <div>
                             <p className="admin-label">Items</p>
                             {(o.items || []).map((it, i) => (
-                              <div key={i} className="flex justify-between text-sm mb-1">
-                                <span>{it.name} × {it.quantity}</span>
-                                <span>${(it.price * it.quantity).toFixed(2)}</span>
+                              <div key={i} className="mb-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>{it.name} × {it.quantity}</span>
+                                  <span>${(it.price * it.quantity).toFixed(2)}</span>
+                                </div>
+                                {(it.recipe || it.blend) && (
+                                  <p className="text-xs text-2C2C2C/60 mt-0.5">
+                                    Recipe: {(Array.isArray(it.recipe) ? it.recipe : blendRecipe(it.blend)).join(' · ')}
+                                  </p>
+                                )}
                               </div>
                             ))}
+                            {Number(o.shipping_amount) > 0 && (
+                              <div className="flex justify-between text-sm text-2C2C2C/60 mt-2">
+                                <span>Shipping</span>
+                                <span>${Number(o.shipping_amount).toFixed(2)}</span>
+                              </div>
+                            )}
                             {o.discount_code && (
                               <div className="flex justify-between text-sm text-2C2C2C/60 mt-2">
                                 <span>Discount ({o.discount_code})</span>

@@ -88,82 +88,89 @@ above: your `orders` table is missing a column this version expects. Re-run
 
 ## Accepting real payments (Stripe)
 
-Right now checkout captures orders as "pending" without collecting payment —
-you follow up manually. Here's how to turn on real, international card
-payments (plus Apple Pay / Google Pay automatically) using Stripe Checkout.
-This also automatically emails the customer a payment receipt — no extra
-email setup needed for that part.
+Customers pay on Stripe's own secure page (cards, Apple Pay, Google Pay). Your site
+never sees card numbers. Payment is created by two small server functions on Supabase;
+your Stripe **secret** key lives only there, never in the website.
 
-**Why this approach:** your secret Stripe key must never be in frontend code
-(anyone could read it and charge things to your account). So payment
-creation happens in a Supabase Edge Function instead — a small server-side
-function that runs on Supabase's infrastructure, not in the browser.
+**What's protected for you:** the server looks up every price from your products table,
+so nobody can edit a request to pay less. Shipping, discount codes and the total are
+all calculated on the server and Stripe is charged exactly that amount.
 
 ### One-time setup
 
-1. **Create a Stripe account** at stripe.com if you don't have one. Complete
-   their business verification (needed before you can accept live payments).
-
-2. **Install the Supabase CLI** (only needed once, on your own computer):
+1. **Stripe account** — create one at stripe.com and finish business verification.
+   Add your bank account inside Stripe (Settings → Business → Bank accounts) so payouts reach you.
+2. **Supabase CLI** (once, on your computer): `npm install -g supabase`, then in this folder:
    ```
-   npm install -g supabase
-   ```
-
-3. **Link this project to your Supabase project**:
-   ```
-   cd odara-fashion
    supabase login
    supabase link --project-ref oidmhnqdhwcoqckeffeo
    ```
-
-4. **Get your Stripe secret key**: Stripe Dashboard → Developers → API keys →
-   copy the **Secret key** (starts `sk_test_...` while testing, `sk_live_...`
-   when you're ready for real payments).
-
-5. **Set your secrets** (replace the values):
+3. **Re-run `sql/schema.sql`** in Supabase → SQL Editor (safe to re-run any time).
+4. **Secrets** (Stripe Dashboard → Developers → API keys → *Secret key*, starts `sk_test_` while testing):
    ```
    supabase secrets set STRIPE_SECRET_KEY=sk_test_...
-   supabase secrets set SITE_URL=https://yoursite.com
+   supabase secrets set SITE_URL=https://odara-fashion.vercel.app
+   supabase secrets set ADMIN_EMAIL=you@yourmail.com
    ```
-
-6. **Deploy both functions**:
+   `SITE_URL` is where customers return after paying — set it to your real site address.
+5. **Deploy both functions:**
    ```
    supabase functions deploy create-checkout-session
    supabase functions deploy stripe-webhook --no-verify-jwt
    ```
-
-7. **Connect the webhook**: Stripe Dashboard → Developers → Webhooks → Add
-   endpoint. URL is:
-   ```
-   https://oidmhnqdhwcoqckeffeo.supabase.co/functions/v1/stripe-webhook
-   ```
-   Select event: `checkout.session.completed` (and `checkout.session.expired`
-   if you want failed/abandoned payments tracked too). After creating it,
-   Stripe shows a **Signing secret** (`whsec_...`) — copy it and run:
+6. **Connect the webhook** — Stripe Dashboard → Developers → Webhooks → Add endpoint:
+   `https://oidmhnqdhwcoqckeffeo.supabase.co/functions/v1/stripe-webhook`
+   Events: `checkout.session.completed` and `checkout.session.expired`. Stripe then shows a
+   *Signing secret* (`whsec_...`):
    ```
    supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
    ```
+7. **Turn payments on in the website.** `.env.local` only works on your own computer. For your
+   live site on Vercel: *Project → Settings → Environment Variables*, add
+   `VITE_PAYMENTS_ENABLED` = `true` (plus `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` if
+   they aren't there already), then **Redeploy**.
+8. **Customer receipts** — Stripe Dashboard → Settings → Customer emails → switch on
+   *Successful payments*. (Stripe only sends receipts for real payments, not test ones.)
 
-8. **Turn on automatic receipt emails** (so customers get a payment
-   confirmation with zero extra code): Stripe Dashboard → Settings →
-   Customer emails → enable "Successful payments".
+### Emails from your own site (optional)
 
-9. **Flip the switch**: in `.env.local`, set `VITE_PAYMENTS_ENABLED=true`,
-   redeploy your site (or restart `npm run dev` locally).
+The webhook can also email the customer and you through Resend (resend.com):
+```
+supabase secrets set RESEND_API_KEY=re_...
+supabase secrets set EMAIL_FROM="Odara Fashion <orders@yourdomain.com>"
+```
+**Important:** until you verify your own domain in Resend, Resend only delivers to the address you
+signed up with. So the "new paid order" email to **you** works straight away, but emails to
+**customers** need a verified domain. Until then, rely on Stripe's receipts (step 8).
+Never put the Resend or Stripe secret keys in `.env.local` or any file in this project.
 
-### Testing before going live
+### Test first
 
-Use Stripe's test card `4242 4242 4242 4242`, any future expiry date, any
-CVC. Orders will show up in the admin's **Orders** tab with `payment_status:
-paid` once the test payment completes. Switch `sk_test_...` → `sk_live_...`
-(and redeploy the functions) only once you're ready for real charges.
+With `sk_test_...`, pay with card `4242 4242 4242 4242`, any future date, any CVC. The order
+appears in **Admin → Orders** as *paid*. Try a discount code and a wrong code too.
+
+### Going live (do this once, in order)
+
+1. Stripe: switch the dashboard from *Test mode* to *Live*, and finish activating the account.
+2. Copy the **live** secret key: `supabase secrets set STRIPE_SECRET_KEY=sk_live_...`
+3. Live mode has its **own** webhook: add the same endpoint URL again while in *Live* mode, then
+   `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...` with the **new** live signing secret.
+   (Using the test one is the #1 reason live payments get charged but never show as paid.)
+4. Redeploy the functions (step 5) so they pick up the new keys.
+5. Place one real small order yourself and confirm it shows as paid in Admin → Orders.
 
 ### What the admin sees
 
-The **Orders** tab now shows a **Payment** column (unpaid / paid / failed)
-separate from the fulfillment **Status** column (pending / processing /
-shipped / delivered) — so you can tell "paid, not shipped yet" apart from
-"placed but never paid."
+Admin → Orders shows a **Payment** column (unpaid / paid / failed) separate from the fulfilment
+**Status**. Orders include the customer's color/size, any discount code, shipping, and — for
+custom scents — the exact blend recipe to make. Abandoned checkouts become *failed* after ~35 minutes.
+
+### Not handled yet
+
+- **Sales tax** isn't added. Ask your accountant what you must collect in Ohio and for out-of-state
+  customers (Stripe Tax can automate it).
+- **Stock** is checked at checkout (a sold-out product can't be bought) but isn't reduced
+  automatically when an order is paid — update stock in Admin → Products.
 
 ## Notes on today's catalog
 
@@ -218,3 +225,21 @@ Everything below is managed from the admin — no code needed.
   `supabase functions deploy create-checkout-session`
   (I could only check this file's syntax here — test one discounted payment with
   Stripe's test card before going live.)
+
+## The redesigned home page: New Arrivals, Best Sellers, Reviews, Quick Add
+
+- **Hero**: full-width photo slider (three slides, your own photos). The photos live in
+  `src/assets/hero/`; swap files there to change them.
+- **Admin → New & Best**: pick which products appear under **New Arrivals** and **Best Sellers**
+  and put them in order with the arrows. (The star on a product in Admin → Products still works
+  for Best Sellers.) The menu items *New Arrivals* and *Best Sellers* open those lists.
+- **Admin → Reviews**: customers can write reviews on each product page. They stay hidden until you
+  press **Publish**. You can also add a genuine review you received elsewhere (WhatsApp, Instagram…).
+  Nothing is shown on the home page until at least one review is published — no made-up reviews.
+- **Announcement bar**: rotates through your real offers by itself — *Free shipping over $X* (set
+  the amount in Admin → Offers & shipping) and the welcome discount. Add an extra message if you want.
+- **Quick Add** on every product card, a slide-in bag instead of pop-ups, and a mobile-first checkout
+  (collapsible summary, sticky pay button, state/country fields, autofill).
+- **Re-run `sql/schema.sql`** once. It adds the reviews table and the New & Best ordering, and it
+  also fixes an "infinite recursion in policy for relation profiles" error that made every admin
+  permission check fail on a freshly built database.

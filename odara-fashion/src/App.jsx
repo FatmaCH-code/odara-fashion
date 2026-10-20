@@ -11,6 +11,9 @@ import Muse from './pages/Muse'
 import Search from './pages/Search'
 import AnnouncementBar from './components/AnnouncementBar'
 import WelcomeOffer from './components/WelcomeOffer'
+import CartDrawer from './components/CartDrawer'
+import QuickAddModal from './components/QuickAddModal'
+import Toast from './components/Toast'
 import MakePerfume from './pages/MakePerfume'
 import ProductPage from './pages/ProductPage'
 import CartPage from './pages/CartPage'
@@ -33,6 +36,9 @@ function StorefrontChrome({ children }) {
       {children}
       {!isAdmin && <Footer />}
       {!isAdmin && <WelcomeOffer />}
+      {!isAdmin && <CartDrawer />}
+      {!isAdmin && <QuickAddModal />}
+      {!isAdmin && <Toast />}
     </>
   )
 }

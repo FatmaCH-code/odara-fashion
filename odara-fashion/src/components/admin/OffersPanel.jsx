@@ -19,6 +19,7 @@ export default function OffersPanel() {
 
   const setOffer = (patch) => setForm(f => ({ ...f, welcomeOffer: { ...f.welcomeOffer, ...patch } }))
   const setBar = (patch) => setForm(f => ({ ...f, announcement: { ...f.announcement, ...patch } }))
+  const setShip = (patch) => setForm(f => ({ ...f, shipping: { ...f.shipping, ...patch } }))
 
   const save = async (e) => {
     e.preventDefault()
@@ -29,7 +30,9 @@ export default function OffersPanel() {
       const percent = Math.min(90, Math.max(1, parseInt(form.welcomeOffer.percent) || 10))
       const code = (form.welcomeOffer.code || '').trim().toUpperCase().replace(/\s+/g, '') || 'WELCOME10'
       const delaySeconds = Math.min(120, Math.max(1, parseInt(form.welcomeOffer.delaySeconds) || 6))
-      const next = { ...form, welcomeOffer: { ...form.welcomeOffer, percent, code, delaySeconds } }
+      const flatFee = Math.min(500, Math.max(0, parseFloat(form.shipping.flatFee) || 0))
+      const freeOver = Math.max(0, parseFloat(form.shipping.freeOver) || 0)
+      const next = { ...form, welcomeOffer: { ...form.welcomeOffer, percent, code, delaySeconds }, shipping: { flatFee, freeOver } }
       await adminSaveSiteSettings(next)
       setForm(next)
       setMessage('Saved — the site updates on the next page load.')
@@ -41,7 +44,7 @@ export default function OffersPanel() {
 
   return (
     <form onSubmit={save} className="max-w-2xl">
-      <h1 className="text-2xl font-playfair mb-2">Offers</h1>
+      <h1 className="text-2xl font-playfair mb-2">Offers &amp; shipping</h1>
       <p className="text-2C2C2C/60 text-sm mb-8">
         The pop-up that appears a few seconds after someone lands on the site, and the bar at the very top. Emails
         collected by the pop-up appear under <strong>Subscribers</strong>.
@@ -78,13 +81,32 @@ export default function OffersPanel() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-playfair text-lg">Announcement bar</h2>
-            <p className="text-xs text-2C2C2C/50">A thin line of text above the menu on every page.</p>
+            <p className="text-xs text-2C2C2C/50">A thin rotating line above the menu on every page. Free shipping and the welcome discount appear here by themselves when they are switched on.</p>
           </div>
           <Toggle on={form.announcement.enabled} onChange={(v) => setBar({ enabled: v })} label="Announcement bar on/off" />
         </div>
-        <label className="admin-label">Text</label>
+        <label className="admin-label">Extra message (optional)</label>
         <input className="admin-input" value={form.announcement.text} onChange={(e) => setBar({ text: e.target.value })} />
-        <p className="text-xs text-2C2C2C/50 mt-2">If you change the discount %, update this text too.</p>
+        <p className="text-xs text-2C2C2C/50 mt-2">Leave empty to show only your real offers.</p>
+      </div>
+
+      <div className="admin-panel-card mb-6">
+        <h2 className="font-playfair text-lg mb-1">Shipping</h2>
+        <p className="text-xs text-2C2C2C/50 mb-4">Added to every order at checkout (cart, Stripe and your orders all use the same amount).</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="admin-label">Shipping fee per order ($)</label>
+            <input type="number" min="0" max="500" step="0.01" className="admin-input" value={form.shipping.flatFee} onChange={(e) => setShip({ flatFee: e.target.value })} />
+          </div>
+          <div>
+            <label className="admin-label">Free shipping on orders over ($)</label>
+            <input type="number" min="0" step="0.01" className="admin-input" value={form.shipping.freeOver} onChange={(e) => setShip({ freeOver: e.target.value })} />
+          </div>
+        </div>
+        <p className="text-xs text-2C2C2C/50 mt-3">
+          Set the fee to <strong>0</strong> for free shipping on everything. Leave "free over" at <strong>0</strong> to always charge the fee.
+          The free-shipping amount is checked after any discount code.
+        </p>
       </div>
 
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}

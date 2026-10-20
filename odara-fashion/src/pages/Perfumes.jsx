@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { useProducts } from '../hooks/useProducts'
 import { isPerfume, getBrandTabs, sameBrand } from '../utils/categories'
@@ -7,7 +6,9 @@ import { isPerfume, getBrandTabs, sameBrand } from '../utils/categories'
 export default function Perfumes() {
   const { products } = useProducts()
   const perfumes = products.filter(isPerfume)
-  const [brandFilter, setBrandFilter] = useState('all')
+  const [params, setParams] = useSearchParams()
+  const brandFilter = params.get('brand') || 'all'
+  const setBrandFilter = (b) => setParams(b === 'all' ? {} : { brand: b }, { replace: true })
 
   const brands = getBrandTabs(perfumes)
   const filtered = brandFilter === 'all'

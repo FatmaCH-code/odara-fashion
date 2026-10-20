@@ -1,75 +1,111 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ShoppingCart, Menu, X, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { ShoppingBag, Menu, X, Search, ChevronDown } from 'lucide-react'
 import { useCartStore } from '../store/cartStore'
+import { useUiStore } from '../store/uiStore'
+import { useProducts } from '../hooks/useProducts'
+import { isFashion, isPerfume, getBrandTabs } from '../utils/categories'
 import odaraEmblem from '../assets/odara-emblem.png'
 import SearchOverlay from './SearchOverlay'
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileGroup, setMobileGroup] = useState(null)
   const [searchOpen, setSearchOpen] = useState(false)
-  const cartCount = useCartStore(state => state.items.length)
+  const cartCount = useCartStore(state => state.items.reduce((s, i) => s + i.quantity, 0))
+  const openCart = useUiStore(s => s.openCart)
+  const { products } = useProducts()
+  const { pathname, search } = useLocation()
+
+  // Close the phone menu whenever the page changes.
+  useEffect(() => { setMobileOpen(false); setMobileGroup(null) }, [pathname, search])
+
+  const categories = [...new Set(products.filter(isFashion).map(p => p.category).filter(Boolean))].sort()
+  const brands = getBrandTabs(products.filter(isPerfume))
+
+  const CartButton = (
+    <button type="button" className="nav-icon-btn nav-cart" onClick={openCart} aria-label={`Open bag, ${cartCount} item${cartCount === 1 ? '' : 's'}`}>
+      <ShoppingBag className="w-[22px] h-[22px]" />
+      {cartCount > 0 && <span className="nav-cart-count">{cartCount}</span>}
+    </button>
+  )
 
   return (
-    <nav className="navbar-premium">
-      <div className="container-premium h-20 flex justify-between items-center">
+    <nav className="navbar-premium" aria-label="Main">
+      <div className="container-premium nav-bar">
         <Link to="/" className="nav-logo-container flex items-center gap-3">
-          <img
-            src={odaraEmblem}
-            alt="Odara Fashion"
-            className="w-11 h-11 rounded-full object-cover shadow-md ring-1 ring-C9A876/40"
-          />
-          <span className="font-playfair text-2xl font-semibold tracking-widest text-2C2C2C">
-            ODARA
-          </span>
+          <img src={odaraEmblem} alt="Odara Fashion" className="w-11 h-11 rounded-full object-cover shadow-md ring-1 ring-C9A876/40" />
+          <span className="font-playfair text-2xl font-semibold tracking-widest text-2C2C2C">ODARA</span>
         </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden lg:flex gap-6 xl:gap-8 items-center">
-          <Link to="/" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Home</Link>
-          <Link to="/shop" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Shop</Link>
-          <Link to="/muse" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Muse</Link>
-          <Link to="/perfumes" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Perfumes</Link>
-          <Link to="/perfumery-oils" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Perfumery Oils</Link>
-          <Link to="/make-perfume" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">Create</Link>
-          <Link to="/about" className="text-sm uppercase tracking-widest text-2C2C2C hover:text-C9A876">About</Link>
+        {/* Desktop menu */}
+        <div className="nav-desktop">
+          <Link to="/shop?tag=new" className="nav-link">New Arrivals</Link>
+          <Link to="/shop?tag=best" className="nav-link">Best Sellers</Link>
+
+          <div className="nav-dd">
+            <Link to="/shop" className="nav-link">Shop <ChevronDown className="nav-caret" /></Link>
+            <div className="nav-dd-panel">
+              <Link to="/shop">All Fashion</Link>
+              {categories.map(c => <Link key={c} to={`/shop?category=${encodeURIComponent(c)}`}>{c}</Link>)}
+            </div>
+          </div>
+
+          <div className="nav-dd">
+            <Link to="/perfumes" className="nav-link">Perfumes <ChevronDown className="nav-caret" /></Link>
+            <div className="nav-dd-panel">
+              <Link to="/perfumes">All Perfumes</Link>
+              {brands.map(b => <Link key={b} to={`/perfumes?brand=${encodeURIComponent(b)}`}>{b}</Link>)}
+            </div>
+          </div>
+
+          <Link to="/perfumery-oils" className="nav-link">Perfumery Oils</Link>
+          <Link to="/muse" className="nav-link">Muse</Link>
+          <Link to="/make-perfume" className="nav-link">Create</Link>
+          <Link to="/about" className="nav-link">About</Link>
         </div>
 
-        <div className="hidden lg:flex items-center gap-6">
-          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="nav-search-btn">
-            <Search className="w-5 h-5 text-2C2C2C hover:text-C9A876" />
+        <div className="nav-actions">
+          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="nav-icon-btn nav-search-btn">
+            <Search className="w-[22px] h-[22px]" />
           </button>
-          <Link to="/cart" className="relative">
-            <ShoppingCart className="w-5 h-5 text-2C2C2C hover:text-C9A876" />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-C9A876 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                {cartCount}
-              </span>
-            )}
-          </Link>
-        </div>
-
-        {/* Mobile Menu */}
-        <div className="lg:hidden flex items-center gap-4">
-          <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="nav-search-btn">
-            <Search className="w-6 h-6" />
-          </button>
-          <button onClick={() => setIsOpen(!isOpen)} aria-label="Menu">
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {CartButton}
+          <button type="button" className="nav-icon-btn nav-burger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu" aria-expanded={mobileOpen}>
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {isOpen && (
-        <div className="lg:hidden border-t border-E8D9C4 p-4 space-y-4">
-          <Link to="/" className="block text-sm uppercase tracking-widest hover:text-C9A876">Home</Link>
-          <Link to="/shop" className="block text-sm uppercase tracking-widest hover:text-C9A876">Shop</Link>
-          <Link to="/muse" className="block text-sm uppercase tracking-widest hover:text-C9A876">Muse</Link>
-          <Link to="/perfumes" className="block text-sm uppercase tracking-widest hover:text-C9A876">Perfumes</Link>
-          <Link to="/perfumery-oils" className="block text-sm uppercase tracking-widest hover:text-C9A876">Perfumery Oils</Link>
-          <Link to="/make-perfume" className="block text-sm uppercase tracking-widest hover:text-C9A876">Create</Link>
-          <Link to="/about" className="block text-sm uppercase tracking-widest hover:text-C9A876">About</Link>
-          <Link to="/cart" className="block text-sm uppercase tracking-widest hover:text-C9A876">Cart ({cartCount})</Link>
+      {/* Phone menu */}
+      {mobileOpen && (
+        <div className="nav-mobile">
+          <Link to="/shop?tag=new">New Arrivals</Link>
+          <Link to="/shop?tag=best">Best Sellers</Link>
+
+          <button type="button" className="nav-mobile-group" onClick={() => setMobileGroup(g => g === 'shop' ? null : 'shop')} aria-expanded={mobileGroup === 'shop'}>
+            Shop <ChevronDown className={`nav-caret ${mobileGroup === 'shop' ? 'is-open' : ''}`} />
+          </button>
+          {mobileGroup === 'shop' && (
+            <div className="nav-mobile-sub">
+              <Link to="/shop">All Fashion</Link>
+              {categories.map(c => <Link key={c} to={`/shop?category=${encodeURIComponent(c)}`}>{c}</Link>)}
+            </div>
+          )}
+
+          <button type="button" className="nav-mobile-group" onClick={() => setMobileGroup(g => g === 'perfumes' ? null : 'perfumes')} aria-expanded={mobileGroup === 'perfumes'}>
+            Perfumes <ChevronDown className={`nav-caret ${mobileGroup === 'perfumes' ? 'is-open' : ''}`} />
+          </button>
+          {mobileGroup === 'perfumes' && (
+            <div className="nav-mobile-sub">
+              <Link to="/perfumes">All Perfumes</Link>
+              {brands.map(b => <Link key={b} to={`/perfumes?brand=${encodeURIComponent(b)}`}>{b}</Link>)}
+            </div>
+          )}
+
+          <Link to="/perfumery-oils">Perfumery Oils</Link>
+          <Link to="/muse">Muse</Link>
+          <Link to="/make-perfume">Create Your Scent</Link>
+          <Link to="/about">About</Link>
         </div>
       )}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />

@@ -2,13 +2,17 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 // What the site uses until (or unless) the admin saves their own in Admin → Offers.
 export const DEFAULT_SETTINGS = {
-  announcement: { enabled: true, text: 'Enjoy 10% off your first order — join our list' },
+  // The bar shows your real offers automatically (free shipping over $X, the welcome discount); `text` is an optional extra message.
+  announcement: { enabled: true, text: '' },
   welcomeOffer: { enabled: true, percent: 10, code: 'WELCOME10', delaySeconds: 6 },
+  // Flat fee per order; orders at/above `freeOver` ship free (0 = never free). Fee 0 = free shipping for everyone.
+  shipping: { flatFee: 10, freeOver: 0 },
 }
 
 const merge = (v) => ({
   announcement: { ...DEFAULT_SETTINGS.announcement, ...((v && v.announcement) || {}) },
   welcomeOffer: { ...DEFAULT_SETTINGS.welcomeOffer, ...((v && v.welcomeOffer) || {}) },
+  shipping: { ...DEFAULT_SETTINGS.shipping, ...((v && v.shipping) || {}) },
 })
 
 let cached = null

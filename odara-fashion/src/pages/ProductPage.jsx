@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
 import { useProducts } from '../hooks/useProducts'
-import { sortSizes } from '../utils/sizes'
+import { useUiStore } from '../store/uiStore'
+import { buildCartItem, sizesFor } from '../utils/cartItem'
+import ProductReviews from '../components/ProductReviews'
+import StarRating from '../components/StarRating'
+import { useReviews, summarize } from '../hooks/useReviews'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function ProductPage() {
   const { id } = useParams()
@@ -10,21 +15,19 @@ export default function ProductPage() {
   const [activeImage, setActiveImage] = useState(0)
   const [selectedColor, setSelectedColor] = useState(null)
   const [selectedSize, setSelectedSize] = useState(null)
+  const [sizeError, setSizeError] = useState('')
   const addToCart = useCartStore(state => state.addItem)
+  const openCart = useUiStore(state => state.openCart)
+  const showToast = useUiStore(state => state.showToast)
+  const { reviews } = useReviews()
+  const { settings } = useSiteSettings()
   const { products: allProducts } = useProducts()
 
   const product = allProducts.find(p => p.id === parseInt(id)) || allProducts[0]
   const gallery = product.images && product.images.length > 0 ? product.images : [product.image]
 
-  // A color can narrow down which sizes it comes in (set in the admin panel).
-  // No override on the selected color — or no color selected at all — just
-  // falls back to the product's general size list.
-  // Sorted defensively here too (not just when the admin saves) so any
-  // product saved before this fix still displays in the right order for
-  // customers without needing to be re-saved.
-  const availableSizes = sortSizes(
-    (selectedColor && selectedColor.sizes !== undefined) ? selectedColor.sizes : (product.sizes || [])
-  )
+  // A color can narrow down which sizes it comes in (set in the admin); otherwise the product's sizes apply. Always in order.
+  const availableSizes = sizesFor(product, selectedColor)
 
   // Reset selections whenever we land on a different product.
   useEffect(() => {
@@ -42,17 +45,14 @@ export default function ProductPage() {
 
   const handleAddToCart = () => {
     if (availableSizes.length > 0 && !selectedSize) {
-      alert('Please select a size')
+      setSizeError('Please choose a size')
+      showToast('Pick a size to continue.', { type: 'error', title: 'Size needed' })
       return
     }
-    const variant = [selectedColor?.name, selectedSize && `Size ${selectedSize}`].filter(Boolean).join(', ')
-    addToCart({
-      id: product.id,
-      name: variant ? `${product.name} (${variant})` : product.name,
-      price: product.price,
-      quantity
-    })
-    alert('Added to cart!')
+    addToCart(buildCartItem(product, selectedColor, selectedSize, quantity))
+    setSizeError('')
+    showToast(`${product.name} is in your bag.`, { title: 'Added to bag' })
+    openCart()
   }
 
   return (
@@ -129,7 +129,7 @@ export default function ProductPage() {
                       <button
                         key={s}
                         type="button"
-                        onClick={() => setSelectedSize(s)}
+                        onClick={() => { setSelectedSize(s); setSizeError('') }}
                         className={`product-size-chip ${selectedSize === s ? 'is-selected' : ''}`}
                       >
                         {s}
@@ -158,20 +158,20 @@ export default function ProductPage() {
                 </div>
               </div>
 
+              {sizeError && <p className="qa-error" role="alert">{sizeError}</p>}
               <button onClick={handleAddToCart} className="btn-gold w-full mb-4">Add to Cart</button>
-              <button className="btn-outline w-full">Wishlist</button>
 
               <div className="mt-12 pt-8 border-t border-E8D9C4">
                 <h3 className="font-playfair text-xl mb-4">Product Details</h3>
                 <ul className="space-y-2 text-sm text-2C2C2C/70">
-                  <li>• Premium materials</li>
-                  <li>• Made to last</li>
-                  <li>• Sustainable sourcing</li>
-                  <li>• Free returns within 30 days</li>
+                  <li>• {product.brand ? `${product.brand} · ${product.category}` : product.category}</li>
+                  {(product.sizes && product.sizes.length > 0) && <li>• Sizes available: {sizesFor(product, null).join(', ')}</li>}
+                  {Number(settings.shipping.freeOver) > 0 && Number(settings.shipping.flatFee) > 0 && <li>• Free shipping on orders over ${Number(settings.shipping.freeOver)}</li>}
                 </ul>
               </div>
             </div>
           </div>
+          <ProductReviews product={product} />
         </div>
       </div>
     </div>

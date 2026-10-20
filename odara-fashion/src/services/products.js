@@ -19,13 +19,22 @@ function fromRow(row) {
     isNew: row.is_new,
     isSale: row.is_sale,
     isBest: !!row.is_best,
+    // Position in Admin → New & Best (undefined if the column isn't in the database yet)
+    newOrder: row.new_order,
+    bestOrder: row.best_order,
     stock: row.stock,
   }
 }
 
 function toRow(product) {
   const images = product.images && product.images.length > 0 ? product.images : (product.image ? [product.image] : [])
+  // Only written when the database has these columns (i.e. after re-running schema.sql),
+  // so saving a product can never fail just because the upgrade hasn't been run yet.
+  const orders = {}
+  if (product.newOrder !== undefined) orders.new_order = product.newOrder
+  if (product.bestOrder !== undefined) orders.best_order = product.bestOrder
   return {
+    ...orders,
     name: product.name,
     description: product.description || '',
     price: product.price,
@@ -113,4 +122,27 @@ export async function adminSetIsAdmin(id, isAdmin) {
   if (!isSupabaseConfigured) throw new Error('Supabase is not configured yet — see SETUP.md.')
   const { error } = await supabase.from('profiles').update({ is_admin: isAdmin }).eq('id', id)
   if (error) throw error
+}
+
+
+// ---- New Arrivals / Best Sellers curation (Admin → New & Best) ----
+// section: 'new' | 'best'. Turning a product ON puts it at the end of the list;
+// moving up/down renumbers the whole list so the order always sticks.
+const FLAG = { new: ['is_new', 'new_order'], best: ['is_best', 'best_order'] }
+
+export async function adminSetFeatured(productId, section, on, position = 0) {
+  if (!isSupabaseConfigured) throw new Error('Supabase is not configured yet — see SETUP.md.')
+  const [flag, order] = FLAG[section]
+  const { error } = await supabase.from('products').update({ [flag]: on, [order]: on ? position : 0 }).eq('id', productId)
+  if (error) throw error
+}
+
+export async function adminReorderFeatured(section, orderedIds) {
+  if (!isSupabaseConfigured) throw new Error('Supabase is not configured yet — see SETUP.md.')
+  const [, order] = FLAG[section]
+  const results = await Promise.all(
+    orderedIds.map((id, i) => supabase.from('products').update({ [order]: i + 1 }).eq('id', id))
+  )
+  const failed = results.find(r => r.error)
+  if (failed) throw failed.error
 }

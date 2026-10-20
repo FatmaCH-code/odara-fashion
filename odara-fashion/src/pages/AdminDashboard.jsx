@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Link, NavLink, Routes, Route } from 'react-router-dom'
-import { LayoutDashboard, Package, Tag, Sparkles, Percent, ShoppingBag, Mail, Users, LogOut, ExternalLink, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, Tag, FlaskConical, Star, MessageSquare, Sparkles, Percent, ShoppingBag, Mail, Users, LogOut, ExternalLink, Menu, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import OverviewPanel from '../components/admin/OverviewPanel'
 import ProductsPanel from '../components/admin/ProductsPanel'
 import CategoriesPanel from '../components/admin/CategoriesPanel'
+import FeaturedPanel from '../components/admin/FeaturedPanel'
+import ReviewsPanel from '../components/admin/ReviewsPanel'
 import MusePanel from '../components/admin/MusePanel'
 import OffersPanel from '../components/admin/OffersPanel'
+import BlendPanel from '../components/admin/BlendPanel'
 import OrdersPanel from '../components/admin/OrdersPanel'
 import SubscribersPanel from '../components/admin/SubscribersPanel'
 import TeamPanel from '../components/admin/TeamPanel'
@@ -16,7 +19,10 @@ const NAV_ITEMS = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'Overview' },
   { to: '/admin/products', icon: Package, label: 'Products' },
   { to: '/admin/categories', icon: Tag, label: 'Categories' },
+  { to: '/admin/featured', icon: Star, label: 'New & Best' },
+  { to: '/admin/reviews', icon: MessageSquare, label: 'Reviews' },
   { to: '/admin/muse', icon: Sparkles, label: 'Muse' },
+  { to: '/admin/signature', icon: FlaskConical, label: 'Signature' },
   { to: '/admin/offers', icon: Percent, label: 'Offers' },
   { to: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
   { to: '/admin/subscribers', icon: Mail, label: 'Subscribers' },
@@ -89,9 +95,12 @@ export default function AdminDashboard() {
           <Route path="products/new" element={<ProductsPanel />} />
           <Route path="products/:id/edit" element={<ProductsPanel />} />
           <Route path="categories" element={<CategoriesPanel />} />
+          <Route path="featured" element={<FeaturedPanel />} />
+          <Route path="reviews" element={<ReviewsPanel />} />
           <Route path="muse" element={<MusePanel />} />
           <Route path="muse/new" element={<MusePanel />} />
           <Route path="muse/:id/edit" element={<MusePanel />} />
+          <Route path="signature" element={<BlendPanel />} />
           <Route path="offers" element={<OffersPanel />} />
           <Route path="orders" element={<OrdersPanel />} />
           <Route path="subscribers" element={<SubscribersPanel />} />
