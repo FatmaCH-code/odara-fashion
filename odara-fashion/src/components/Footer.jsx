@@ -24,7 +24,7 @@ export default function Footer() {
             </div>
             <div className="footer-contact">
               <p className="footer-contact-label">Email</p>
-              <a href="mailto:hello@odarafashion.com">hello@odarafashion.com</a>
+              <a href="mailto:Odarafashionplace@gmail.com">Odarafashionplace@gmail.com</a>
             </div>
           </div>
 

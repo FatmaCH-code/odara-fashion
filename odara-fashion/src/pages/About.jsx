@@ -74,7 +74,7 @@ export default function About() {
             <div>
               <Mail className="w-6 h-6 text-C9A876 mx-auto mb-3" />
               <h3 className="text-sm uppercase tracking-widest font-semibold mb-2">Email Us</h3>
-              <a href="mailto:hello@odarafashion.com" className="text-2C2C2C/70 hover:text-C9A876">hello@odarafashion.com</a>
+              <a href="mailto:Odarafashionplace@gmail.com" className="text-2C2C2C/70 hover:text-C9A876">Odarafashionplace@gmail.com</a>
             </div>
             <div>
               <Instagram className="w-6 h-6 text-C9A876 mx-auto mb-3" />

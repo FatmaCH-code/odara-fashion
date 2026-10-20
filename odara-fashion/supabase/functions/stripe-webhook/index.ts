@@ -36,6 +36,7 @@ interface OrderItem {
   price: number | string
   quantity: number | string
   blend?: Record<string, string | number | null>
+  recipe?: string[]
 }
 
 interface OrderRow {
@@ -75,6 +76,9 @@ async function sendEmail(to: string, subject: string, html: string): Promise<voi
 }
 
 function blendRecipe(item: OrderItem): string {
+  if (Array.isArray(item.recipe) && item.recipe.length) {
+    return `<br><span style="color:#777;font-size:12px">${esc(item.recipe.join(' · '))}</span>`
+  }
   if (!item.blend) return ''
   const parts = Object.entries(BLEND_NAMES)
     .map(([slot, names]) => {
