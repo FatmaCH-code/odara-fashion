@@ -57,6 +57,7 @@ DECLARE
   v_k        text;
   v_cfg      jsonb;
   v_opt      jsonb;
+  v_sub      jsonb;
   v_recipe   jsonb;
 BEGIN
   -- The signature-scent menu (oils, notes, sizes, prices) is managed in Admin -> Signature.
@@ -91,7 +92,15 @@ BEGIN
       v_opt := public.blend_option(v_cfg, 'bases', v_blend->>'base');
       IF v_opt IS NULL THEN RAISE EXCEPTION 'Invalid custom blend.'; END IF;
       v_price := 0;   -- base oils carry no price: the bottle size sets the starting price
-      v_recipe := v_recipe || to_jsonb('Base oil: ' || (v_opt->>'name'));
+      -- Optional types inside a main scent (e.g. Oud -> Cambodian / Royal). Required once the admin has active ones.
+      IF EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(v_opt->'subs', '[]'::jsonb)) x WHERE coalesce((x->>'active')::boolean, true)) THEN
+        SELECT x INTO v_sub FROM jsonb_array_elements(coalesce(v_opt->'subs', '[]'::jsonb)) x
+        WHERE x->>'id' = v_blend->>'sub' AND coalesce((x->>'active')::boolean, true) LIMIT 1;
+        IF v_sub IS NULL THEN RAISE EXCEPTION 'Please choose a type for your main scent.'; END IF;
+      ELSE
+        v_sub := NULL;
+      END IF;
+      v_recipe := v_recipe || to_jsonb('Base oil: ' || (v_opt->>'name') || coalesce(' - ' || (v_sub->>'name'), ''));
 
       v_k := v_blend->>'topNote';
       IF v_k IS NOT NULL THEN

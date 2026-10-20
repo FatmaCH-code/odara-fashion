@@ -70,7 +70,7 @@ function Thumb({ item }) {
 
 export default function MakePerfume() {
   const [cfg, setCfg] = useState(DEFAULT_BLEND)
-  const [pick, setPick] = useState({ name: '', base: null, twist: null, character: 'balanced', size: null })
+  const [pick, setPick] = useState({ name: '', base: null, sub: null, twist: null, character: 'balanced', size: null })
   const addToCart = useCartStore(state => state.addItem)
   const openCart = useUiStore(state => state.openCart)
   const showToast = useUiStore(state => state.showToast)
@@ -93,18 +93,23 @@ export default function MakePerfume() {
   }, [])
 
   const baseOpt = bases.find(b => String(b.id) === String(pick.base))
+  const subs = visible(baseOpt?.subs)
+  const subOpt = subs.find(x => String(x.id) === String(pick.sub))
   const twistOpt = twists.find(t => String(t.id) === String(pick.twist))
   const sizeOpt = sizes.find(s => s.id === pick.size)
   const charOpt = CHARACTERS.find(c => c.id === pick.character)
   const total = Number(sizeOpt?.price) || 0
 
-  const startOver = () => setPick({ name: '', base: null, twist: null, character: 'balanced', size: sizes[0]?.id || null })
+  const startOver = () => setPick({ name: '', base: null, sub: null, twist: null, character: 'balanced', size: sizes[0]?.id || null })
   const surprise = () => {
     const r = (list) => list[Math.floor(Math.random() * list.length)]
     const hasTwist = twists.length > 0 && Math.random() > 0.3
+    const b = bases.length ? r(bases) : null
+    const bSubs = visible(b?.subs)
     setPick(p => ({
       ...p,
-      base: bases.length ? String(r(bases).id) : null,
+      base: b ? String(b.id) : null,
+      sub: bSubs.length ? String(r(bSubs).id) : null,
       twist: hasTwist ? String(r(twists).id) : null,
       character: r(CHARACTERS).id,
     }))
@@ -113,6 +118,10 @@ export default function MakePerfume() {
   const handleAddToCart = () => {
     if (!baseOpt) {
       showToast('Choose your main scent to start your blend.', { type: 'error', title: 'Main scent needed' })
+      return
+    }
+    if (subs.length > 0 && !subOpt) {
+      showToast(`Choose a type of ${baseOpt.name}.`, { type: 'error', title: 'Type needed' })
       return
     }
     if (!sizeOpt) {
@@ -131,6 +140,7 @@ export default function MakePerfume() {
       // The recipe travels with the order; the server prices it again from the admin's settings.
       blend: {
         base: String(baseOpt.id),
+        ...(subOpt ? { sub: String(subOpt.id) } : {}),
         ...(twistOpt ? { [twistOpt.slot]: String(twistOpt.id) } : {}),
         character: pick.character,
         size: sizeOpt.id,
@@ -174,7 +184,7 @@ export default function MakePerfume() {
                 {heading(1, 'Choose your main scent')}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {bases.map(o => (
-                    <button key={o.id} type="button" onClick={() => setPick(p => ({ ...p, base: String(o.id) }))}
+                    <button key={o.id} type="button" onClick={() => setPick(p => ({ ...p, base: String(o.id), sub: String(p.base) === String(o.id) ? p.sub : null }))}
                       className={`${card(String(pick.base) === String(o.id))} flex items-center gap-3 p-3 pr-8`}>
                       <Thumb item={o} />
                       <span className="min-w-0">
@@ -186,6 +196,25 @@ export default function MakePerfume() {
                   ))}
                 </div>
               </section>
+
+              {subs.length > 0 && (
+                <section>
+                  {heading('1b', `Choose your ${baseOpt.name}`, 'Pick the type you prefer.')}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {subs.map(o => (
+                      <button key={o.id} type="button" onClick={() => setPick(p => ({ ...p, sub: String(o.id) }))}
+                        className={`${card(String(pick.sub) === String(o.id))} flex items-center gap-3 p-3 pr-8`}>
+                        <Thumb item={o} />
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-2C2C2C">{o.name}</span>
+                          {o.tagline && <span className="block text-sm text-2C2C2C/60">{o.tagline}</span>}
+                        </span>
+                        {String(pick.sub) === String(o.id) && badge}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               <section>
                 {heading(2, 'Add a twist', 'Choose a second scent, or keep it simple.')}
@@ -267,7 +296,7 @@ export default function MakePerfume() {
                 </div>
 
                 <dl className="text-sm space-y-2 text-left mb-5">
-                  <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Main scent</dt><dd className="text-2C2C2C">{baseOpt?.name || '—'}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Main scent</dt><dd className="text-2C2C2C text-right">{baseOpt ? (subOpt ? `${baseOpt.name} — ${subOpt.name}` : baseOpt.name) : '—'}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Added twist</dt><dd className="text-2C2C2C">{twistOpt?.name || 'None'}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Character</dt><dd className="text-2C2C2C">{charOpt?.label}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-2C2C2C/70">Bottle</dt><dd className="text-2C2C2C">{sizeOpt?.label || '—'}</dd></div>
