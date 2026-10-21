@@ -36,6 +36,13 @@ export default function ProductPage() {
     setSelectedSize(null)
   }, [product.id])
 
+  // Picking a color shows that color's own photo (set when products are merged in the admin).
+  useEffect(() => {
+    const img = selectedColor && selectedColor.image
+    const i = img ? gallery.indexOf(img) : -1
+    if (i >= 0) setActiveImage(i)
+  }, [selectedColor])
+
   // If switching color makes the currently-picked size unavailable, clear it.
   useEffect(() => {
     if (selectedSize && !availableSizes.includes(selectedSize)) {

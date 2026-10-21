@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Instagram, MapPin, Mail } from 'lucide-react'
+import { Instagram, Facebook, MapPin, Mail, Gem, Droplets, Sparkles } from 'lucide-react'
 import heroImage from '../assets/hero-traditional-dress.jpg'
 import odaraEmblem from '../assets/odara-emblem.png'
 
@@ -39,57 +39,55 @@ export default function About() {
       </section>
 
       {/* Values */}
-      <section className="section-premium bg-F5EFE0">
+      <section className="about-values">
         <div className="container-premium">
+          <p className="about-eyebrow">Our promise</p>
           <h2 className="section-title">What We Value</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-12">
-            <div className="text-center">
-              <div className="text-4xl font-playfair text-C9A876 mb-4">01</div>
-              <h3 className="text-xl font-semibold mb-2">Heritage Craftsmanship</h3>
-              <p className="text-2C2C2C/70">Every kaftan and abaya is chosen for its embroidery, fabric and finish — pieces meant to last.</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-playfair text-C9A876 mb-4">02</div>
-              <h3 className="text-xl font-semibold mb-2">Authentic Fragrance</h3>
-              <p className="text-2C2C2C/70">Our perfumes and oils are built from real oud, amber and floral notes — no shortcuts.</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-playfair text-C9A876 mb-4">03</div>
-              <h3 className="text-xl font-semibold mb-2">Personal Elegance</h3>
-              <p className="text-2C2C2C/70">From ready-to-wear pieces to custom-blended scents, we help you build a look that's entirely yours.</p>
-            </div>
+          <div className="about-values-grid">
+            {[
+              [Gem, '01', 'Heritage Craftsmanship', 'Every kaftan and abaya is chosen for its embroidery, fabric and finish — pieces meant to last.'],
+              [Droplets, '02', 'Authentic Fragrance', 'Our perfumes and oils are built from real oud, amber and floral notes — no shortcuts.'],
+              [Sparkles, '03', 'Personal Elegance', "From ready-to-wear pieces to custom-blended scents, we help you build a look that's entirely yours."],
+            ].map(([Icon, n, title, text]) => (
+              <article key={n} className="value-card">
+                <span className="value-card-num">{n}</span>
+                <span className="value-card-icon"><Icon className="w-6 h-6" strokeWidth={1.4} /></span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Visit / Contact */}
-      <section className="section-premium">
+      <section className="about-contact">
         <div className="container-premium">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
-            <div>
-              <MapPin className="w-6 h-6 text-C9A876 mx-auto mb-3" />
-              <h3 className="text-sm uppercase tracking-widest font-semibold mb-2">Visit Us</h3>
-              <p className="text-2C2C2C/70">1500 Polaris Place<br />Columbus, Ohio</p>
+          <p className="about-eyebrow">Say hello</p>
+          <h2 className="section-title">Find Us</h2>
+          <div className="contact-grid">
+            <div className="contact-card">
+              <span className="contact-icon"><MapPin className="w-5 h-5" strokeWidth={1.5} /></span>
+              <h3>Visit Us</h3>
+              <p>1500 Polaris Place<br />Columbus, Ohio</p>
             </div>
-            <div>
-              <Mail className="w-6 h-6 text-C9A876 mx-auto mb-3" />
-              <h3 className="text-sm uppercase tracking-widest font-semibold mb-2">Email Us</h3>
-              <a href="mailto:Odarafashionplace@gmail.com" className="text-2C2C2C/70 hover:text-C9A876">Odarafashionplace@gmail.com</a>
+            <div className="contact-card">
+              <span className="contact-icon"><Mail className="w-5 h-5" strokeWidth={1.5} /></span>
+              <h3>Email Us</h3>
+              <a href="mailto:Odarafashionplace@gmail.com">Odarafashionplace@gmail.com</a>
             </div>
-            <div>
-              <Instagram className="w-6 h-6 text-C9A876 mx-auto mb-3" />
-              <h3 className="text-sm uppercase tracking-widest font-semibold mb-2">Follow Us</h3>
-              <a
-                href="https://www.instagram.com/odarafashionplace/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-2C2C2C/70 hover:text-C9A876"
-              >
-                @odarafashionplace
+            <div className="contact-card">
+              <span className="contact-icon"><Instagram className="w-5 h-5" strokeWidth={1.5} /></span>
+              <h3>Follow Us</h3>
+              <a href="https://www.instagram.com/odarafashionplace/" target="_blank" rel="noopener noreferrer">
+                <Instagram className="w-4 h-4" /> @odarafashionplace
+              </a>
+              <a href="https://www.facebook.com/odaraFashionPlace" target="_blank" rel="noopener noreferrer">
+                <Facebook className="w-4 h-4" /> Odara Fashion Place
               </a>
             </div>
           </div>
-          <div className="text-center mt-14">
+          <div className="text-center mt-12">
             <Link to="/shop" className="btn-gold">Explore The Collection</Link>
           </div>
         </div>

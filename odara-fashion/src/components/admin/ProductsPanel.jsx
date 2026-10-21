@@ -3,12 +3,16 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Star } from 'lucide-react'
 import { useAdminProducts } from '../../hooks/useAdminProducts'
 import ProductForm from './ProductForm'
+import MergeProductsModal from './MergeProductsModal'
 import { adminGetExtraCategories } from '../../services/categories'
 
 export default function ProductsPanel() {
   const { products, loading, error, saveProduct, deleteProduct } = useAdminProducts()
   const [search, setSearch] = useState('')
   const [deletingId, setDeletingId] = useState(null)
+  const [selected, setSelected] = useState([])        // product ids ticked for "Merge"
+  const [merging, setMerging] = useState(false)
+  const [notice, setNotice] = useState('')
   const [extraCategories, setExtraCategories] = useState([])
   useEffect(() => { adminGetExtraCategories().then(setExtraCategories).catch(() => {}) }, [])
   const navigate = useNavigate()
@@ -38,6 +42,27 @@ export default function ProductsPanel() {
     closeModal()
   }
 
+  const toggleSelect = (pid) => setSelected(sel => (sel.includes(pid) ? sel.filter(x => x !== pid) : [...sel, pid]))
+
+  // One product with a color per original: photos are kept, extra products are deleted.
+  const handleMerge = async ({ mainId, name, price, category, colors }) => {
+    const group = [products.find(p => p.id === mainId), ...selected.filter(x => x !== mainId).map(x => products.find(p => p.id === x))].filter(Boolean)
+    const main = group[0]
+    const images = []
+    const newColors = group.map(p => {
+      const own = (p.images && p.images.length ? p.images : (p.image ? [p.image] : []))
+      own.forEach(u => { if (!images.includes(u)) images.push(u) })
+      const c = colors.find(x => x.id === p.id)
+      return { name: c.name.trim(), hex: c.hex, image: own[0] || '', sizes: (p.sizes || []) }
+    })
+    const stock = group.reduce((t, p) => t + (Number(p.stock) || 0), 0)
+    await saveProduct({ ...main, name, price, category, images, image: images[0], colors: newColors, sizes: [], stock: stock > 0 ? stock : 20 }, main.id)
+    for (const p of group.slice(1)) await deleteProduct(p.id)
+    setMerging(false)
+    setSelected([])
+    setNotice(`Merged ${group.length} products into “${name}” with ${group.length} colors.`)
+  }
+
   const handleDelete = async (productId) => {
     setDeletingId(null)
     await deleteProduct(productId)
@@ -56,6 +81,7 @@ export default function ProductsPanel() {
   return (
     <>
       {error && <div className="admin-notice mb-6">{error}</div>}
+      {notice && <div className="admin-notice mb-6">{notice}</div>}
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <h1 className="text-2xl font-playfair">Products ({products.length})</h1>
@@ -72,10 +98,21 @@ export default function ProductsPanel() {
         </div>
       </div>
 
+      {selected.length > 0 && (
+        <div className="admin-notice mb-4 flex items-center justify-between flex-wrap gap-3">
+          <span>{selected.length} selected{selected.length === 1 ? ' — tick the others that are the same product in another color' : ''}</span>
+          <span className="flex gap-2">
+            <button className="admin-btn-secondary" onClick={() => setSelected([])}>Clear</button>
+            <button className="admin-btn-primary" disabled={selected.length < 2} onClick={() => setMerging(true)}>Merge into one product</button>
+          </span>
+        </div>
+      )}
+
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
+              <th></th>
               <th></th>
               <th>Name</th>
               <th>Category</th>
@@ -88,6 +125,7 @@ export default function ProductsPanel() {
           <tbody>
             {filtered.map(p => (
               <tr key={p.id}>
+                <td><input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} aria-label={`Select ${p.name}`} /></td>
                 <td>{p.image ? <img src={p.image} alt="" className="admin-table-thumb" /> : <div className="admin-table-thumb-empty" />}</td>
                 <td className="font-medium">{p.name}</td>
                 <td className="text-2C2C2C/60">{p.category}</td>
@@ -128,6 +166,15 @@ export default function ProductsPanel() {
           brands={brands}
           onSave={handleSave}
           onCancel={closeModal}
+        />
+      )}
+
+      {merging && (
+        <MergeProductsModal
+          products={selected.map(x => products.find(p => p.id === x)).filter(Boolean)}
+          categories={categories}
+          onMerge={handleMerge}
+          onCancel={() => setMerging(false)}
         />
       )}
 

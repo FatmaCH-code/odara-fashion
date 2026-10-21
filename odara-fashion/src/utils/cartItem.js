@@ -12,7 +12,7 @@ export function buildCartItem(product, color, size, quantity = 1) {
     id: product.id,
     name: variant ? `${product.name} (${variant})` : product.name,
     price: product.price,
-    image: product.image,
+    image: (color && color.image) || product.image,
     color: color ? color.name : undefined,
     size: size || undefined,
     quantity,

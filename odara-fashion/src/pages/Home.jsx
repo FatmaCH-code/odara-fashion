@@ -1,3 +1,4 @@
+import SignaturePromo from '../components/SignaturePromo'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Ruler, Gem, Droplets, MapPin } from 'lucide-react'
@@ -163,26 +164,7 @@ export default function Home() {
       </section>
 
       {/* Make Your Own */}
-      <section className="section-premium bg-E8D9C4">
-        <div className="container-premium text-center">
-          <Reveal>
-            <h2 className="section-title text-2C2C2C">Create Your Signature Scent</h2>
-            <p className="text-lg text-2C2C2C/70 mb-12 max-w-2xl mx-auto">
-              Blend your own luxury fragrance with our premium oil collection. Choose from our selection of pure essential oils and create a personalized scent that's uniquely yours.
-            </p>
-          </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {[['1', 'Select Base', 'Choose from 4 premium base oils'], ['2', 'Add Notes', 'Mix top, middle, and base notes'], ['3', 'Receive', 'Get your custom blend in 7 days']].map(([n, t, d], i) => (
-              <Reveal key={n} delay={i * 110}>
-                <div className="text-4xl font-playfair text-C9A876 mb-4">{n}</div>
-                <h3 className="text-xl font-semibold mb-2">{t}</h3>
-                <p className="text-2C2C2C/70">{d}</p>
-              </Reveal>
-            ))}
-          </div>
-          <Link to="/make-perfume" className="btn-gold">Start Creating</Link>
-        </div>
-      </section>
+      <SignaturePromo />
 
       {/* Newsletter */}
       <section className="newsletter-premium">
