@@ -132,6 +132,16 @@ all calculated on the server and Stripe is charged exactly that amount.
 8. **Customer receipts** — Stripe Dashboard → Settings → Customer emails → switch on
    *Successful payments*. (Stripe only sends receipts for real payments, not test ones.)
 
+### Using a restricted Stripe key (rk_live_… / rk_test_…)
+
+Restricted keys are the safer choice. The checkout function only needs **one** permission:
+**Checkout Sessions → Write**. Discount codes no longer create Stripe coupons (the discount is built
+into the prices Stripe shows), so **no "Coupons" permission is needed**. After updating the function
+code, redeploy it so the change goes live:
+`supabase functions deploy create-checkout-session`
+If a checkout ever fails, customers see a short friendly message; the real reason is in
+Supabase → Edge Functions → create-checkout-session → Logs.
+
 ### Emails from your own site (optional)
 
 The webhook can also email the customer and you through Resend (resend.com):

@@ -2545,3 +2545,19 @@ footer li {
 .sales-list li:last-child { border-bottom: 0; }
 .sales-list span:last-child { font-weight: 600; white-space: nowrap; }
 .sales-note { font-size: .78rem; color: #8a7a68; margin: .6rem 0 1.6rem; }
+
+
+/* ---------- Product form: item name pinned at the top while scrolling ---------- */
+.admin-modal-sticky {
+  position: sticky;
+  top: -2rem;   /* the modal has 2rem of padding; this pins the header right at its top edge */
+  z-index: 20;
+  margin: -2rem -2rem 1.5rem;
+  padding: 1.15rem 2rem 0.85rem;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E8D9C4;
+  border-radius: 18px 18px 0 0;
+}
+.admin-modal-title { font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; color: #8a7a68; margin: 0 0 0.15rem; font-weight: 500; }
+.admin-modal-itemname { margin: 0; font-family: 'Playfair Display', serif; font-size: 1.45rem; line-height: 1.2; color: #14100d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.admin-label-for { text-transform: none; letter-spacing: 0; font-weight: 400; color: #8a7a68; }

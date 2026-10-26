@@ -137,7 +137,11 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
   return (
     <div className="admin-modal-backdrop" onClick={onCancel}>
       <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-playfair mb-6">{product ? 'Edit Product' : 'Add Product'}</h2>
+        {/* Stays pinned while you scroll, so you always see WHICH item you are editing */}
+        <div className="admin-modal-sticky">
+          <h2 className="admin-modal-title">{product ? 'Edit Product' : 'Add Product'}</h2>
+          <p className="admin-modal-itemname" title={form.name}>{form.name.trim() || 'Untitled item'}</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -285,7 +289,7 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
             </div>
 
             <div className="col-span-2">
-              <label className="admin-label">Colors</label>
+              <label className="admin-label">Colors <span className="admin-label-for">for {form.name.trim() || 'this item'}</span></label>
               <div className="flex gap-2 mb-3">
                 <input className="admin-input flex-1" placeholder="Color name" value={colorName} onChange={(e) => setColorName(e.target.value)} />
                 <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="admin-color-picker" />
