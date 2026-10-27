@@ -35,6 +35,7 @@ export default function QuickAddModal() {
 
   if (!product) return null
   const sizes = sizesFor(product, color)
+  const allNames = !!(product.colors && product.colors.length > 0 && product.colors.every(c => !c.hex))
 
   const add = () => {
     if (sizes.length > 0 && !size) {
@@ -53,7 +54,7 @@ export default function QuickAddModal() {
       <div className="qa-backdrop" onClick={close} />
       <div className="qa-card">
         <button type="button" className="qa-close" onClick={close} aria-label="Close"><X className="w-5 h-5" /></button>
-        <img src={product.image} alt={product.name} className="qa-img" />
+        <img src={(color && color.image) || product.image} alt={product.name} className="qa-img" />
         <div className="qa-body">
           <p className="qa-cat">{product.brand || product.category}</p>
           <h3 className="qa-name">{product.name}</h3>
@@ -64,9 +65,9 @@ export default function QuickAddModal() {
 
           {product.colors && product.colors.length > 0 && (
             <div className="qa-group">
-              <p className="qa-label">Color{color ? ` — ${color.name}` : ''}</p>
+              <p className="qa-label">{allNames ? 'Name' : 'Color'}{color ? ` — ${color.name}` : ''}</p>
               <div className="qa-colors">
-                {product.colors.map(c => (
+                {product.colors.map(c => c.hex ? (
                   <button
                     key={c.name}
                     type="button"
@@ -76,6 +77,8 @@ export default function QuickAddModal() {
                     style={{ backgroundColor: c.hex }}
                     onClick={() => setColor(c)}
                   />
+                ) : (
+                  <button key={c.name} type="button" className={`product-size-chip ${color && color.name === c.name ? 'is-selected' : ''}`} onClick={() => setColor(c)}>{c.name}</button>
                 ))}
               </div>
             </div>

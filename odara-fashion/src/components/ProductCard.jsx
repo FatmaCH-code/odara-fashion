@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useUiStore } from '../store/uiStore'
@@ -6,6 +7,7 @@ import StarRating from './StarRating'
 
 export default function ProductCard({ product, isSale, isNew }) {
   const openQuickAdd = useUiStore(s => s.openQuickAdd)
+  const [preview, setPreview] = useState(null) // hovering a color dot previews that color's photo
   const { reviews } = useReviews()
 
   const sale = isSale ?? product.isSale
@@ -20,7 +22,7 @@ export default function ProductCard({ product, isSale, isNew }) {
       <div className="product-media">
         <Link to={`/product/${product.id}`} className="product-media-link" tabIndex={-1} aria-hidden="true">
           <div className="product-image-wrapper">
-            <img src={product.image} alt="" className="product-image-photo" loading="lazy" />
+            <img src={preview || product.image} alt="" className="product-image-photo" loading="lazy" />
           </div>
         </Link>
 
@@ -52,10 +54,17 @@ export default function ProductCard({ product, isSale, isNew }) {
               <span className="ml-2 text-sm line-through text-2C2C2C/40">${product.originalPrice}</span>
             )}
           </p>
-          {product.colors && product.colors.length > 0 && (
+          {product.colors && product.colors.some(c => c.hex) && (
             <div className="product-colors">
-              {product.colors.map((c) => (
-                <span key={c.name} className="product-color-dot" style={{ backgroundColor: c.hex }} title={c.name} />
+              {product.colors.filter(c => c.hex).map((c) => (
+                <span
+                  key={c.name}
+                  className="product-color-dot"
+                  style={{ backgroundColor: c.hex }}
+                  title={c.name}
+                  onMouseEnter={() => c.image && setPreview(c.image)}
+                  onMouseLeave={() => setPreview(null)}
+                />
               ))}
             </div>
           )}

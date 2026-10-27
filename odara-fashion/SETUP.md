@@ -253,3 +253,13 @@ Everything below is managed from the admin — no code needed.
 - **Re-run `sql/schema.sql`** once. It adds the reviews table and the New & Best ordering, and it
   also fixes an "infinite recursion in policy for relation profiles" error that made every admin
   permission check fail on a freshly built database.
+
+## Colors, names, photos and your own sizes (Admin → Products → edit a product)
+
+- **Colors & names**: add a **Color** (shows a color dot) or a **Name** (shows its name as a button — use this for the
+  different scents of one perfume). Each one has its **own photo** and its **own sizes**.
+- **Photo per color/name**: pick one of the product's photos, or upload a new one. On the shop, clicking the color/name
+  changes the big photo (and the photo in Quick Add and in the bag). Hovering a color dot on a product card previews it.
+- **Sizes**: clothes get US/letter sizes, perfumes and oils get **30 ml / 50 ml / 100 ml** — and for any product you can
+  **type your own size** (e.g. "75 ml", "One size") and press Enter. Sizes always show in a sensible order.
+- Every size currently has the **same price** (the product price). Per-size prices are not set up yet.

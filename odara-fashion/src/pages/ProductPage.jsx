@@ -15,6 +15,7 @@ export default function ProductPage() {
   const [activeImage, setActiveImage] = useState(0)
   const [selectedColor, setSelectedColor] = useState(null)
   const [selectedSize, setSelectedSize] = useState(null)
+  const [thumbPicked, setThumbPicked] = useState(false) // true once the shopper clicks a gallery thumbnail themselves
   const [sizeError, setSizeError] = useState('')
   const addToCart = useCartStore(state => state.addItem)
   const openCart = useUiStore(state => state.openCart)
@@ -32,12 +33,22 @@ export default function ProductPage() {
   // Reset selections whenever we land on a different product.
   useEffect(() => {
     setActiveImage(0)
+    setThumbPicked(false)
     setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0] : null)
     setSelectedSize(null)
   }, [product.id])
 
+  // Live data (with the colors/names the admin added) arrives AFTER the first render, and the page
+  // starts from the built-in catalog. Whenever the list changes, keep the shopper's pick if it still
+  // exists, otherwise select the first one — so the first photo and its sizes are right straight away.
+  useEffect(() => {
+    const list = product.colors || []
+    setSelectedColor(cur => (cur && list.find(c => c.name === cur.name)) || list[0] || null)
+  }, [product.colors])
+
   // Picking a color shows that color's own photo (set when products are merged in the admin).
   useEffect(() => {
+    setThumbPicked(false)
     const img = selectedColor && selectedColor.image
     const i = img ? gallery.indexOf(img) : -1
     if (i >= 0) setActiveImage(i)
@@ -62,6 +73,11 @@ export default function ProductPage() {
     openCart()
   }
 
+  // The big photo: the picked color/name's own photo, unless the shopper chose a thumbnail themselves.
+  const variantImage = selectedColor && selectedColor.image
+  const shownImage = (!thumbPicked && variantImage) ? variantImage : gallery[activeImage]
+  const allNames = !!(product.colors && product.colors.length > 0 && product.colors.every(c => !c.hex))
+
   return (
     <div>
       <div className="section-premium">
@@ -70,15 +86,15 @@ export default function ProductPage() {
             {/* Image gallery */}
             <div>
               <div className="product-image-wrapper" style={{ paddingTop: '110%' }}>
-                <img src={gallery[activeImage]} alt={product.name} className="product-image-photo" />
+                <img src={shownImage} alt={product.name} className="product-image-photo" />
               </div>
               {gallery.length > 1 && (
                 <div className="product-gallery-thumbs">
                   {gallery.map((url, i) => (
                     <button
                       key={i}
-                      onClick={() => setActiveImage(i)}
-                      className={`product-gallery-thumb ${i === activeImage ? 'active' : ''}`}
+                      onClick={() => { setActiveImage(i); setThumbPicked(true) }}
+                      className={`product-gallery-thumb ${url === shownImage ? 'active' : ''}`}
                     >
                       <img src={url} alt={`${product.name} ${i + 1}`} />
                     </button>
@@ -103,10 +119,10 @@ export default function ProductPage() {
               {product.colors && product.colors.length > 0 && (
                 <div className="mb-8">
                   <label className="block text-sm uppercase tracking-widest font-semibold mb-4">
-                    Color{selectedColor ? ` — ${selectedColor.name}` : ''}
+                    {allNames ? 'Name' : 'Color'}{selectedColor ? ` — ${selectedColor.name}` : ''}
                   </label>
-                  <div className="flex items-center gap-3">
-                    {product.colors.map((c) => (
+                  <div className="flex flex-wrap items-center gap-3">
+                    {product.colors.map((c) => c.hex ? (
                       <button
                         key={c.name}
                         type="button"
@@ -120,7 +136,17 @@ export default function ProductPage() {
                           backgroundColor: c.hex,
                         }}
                         title={c.name}
+                        aria-label={c.name}
                       />
+                    ) : (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => setSelectedColor(c)}
+                        className={`product-size-chip ${selectedColor?.name === c.name ? 'is-selected' : ''}`}
+                      >
+                        {c.name}
+                      </button>
                     ))}
                   </div>
                 </div>

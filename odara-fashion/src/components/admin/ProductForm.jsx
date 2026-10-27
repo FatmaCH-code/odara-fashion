@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { adminUploadProductImage } from '../../services/products'
-import { NUMERIC_SIZES, LETTER_SIZES, sortSizes } from '../../utils/sizes'
-import { PERFUME_BRANDS, PERFUME_CATEGORY, OIL_CATEGORY, isPerfumeCategory, getBrandTabs } from '../../utils/categories'
+import { NUMERIC_SIZES, LETTER_SIZES, ML_SIZES } from '../../utils/sizes'
+import SizePicker from './SizePicker'
+import { PERFUME_BRANDS, PERFUME_CATEGORY, OIL_CATEGORY, isPerfumeCategory, isOilCategory, getBrandTabs } from '../../utils/categories'
 
 const EMPTY = {
   name: '', price: '', originalPrice: '', category: '', brand: '', images: [],
@@ -21,11 +22,16 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
   const [error, setError] = useState('')
   const [colorName, setColorName] = useState('')
   const [colorHex, setColorHex] = useState('#c9a876')
+  const [variantKind, setVariantKind] = useState(null) // 'color' | 'name' (null = pick a sensible default)
   const [urlInput, setUrlInput] = useState('')
 
   // Built-in sections are always offered, even before any product uses them.
   const categoryOptions = [...new Set([...(categories || []), PERFUME_CATEGORY, OIL_CATEGORY, form.category].filter(Boolean))]
   const showBrand = isPerfumeCategory(form.category)
+  // Perfumes and oils are sold by bottle size (ml), clothes by US/letter size — either way you can add your own.
+  const scentMode = isPerfumeCategory(form.category) || isOilCategory(form.category)
+  const sizeGroups = scentMode ? [ML_SIZES] : [NUMERIC_SIZES, LETTER_SIZES]
+  const kind = variantKind ?? (scentMode ? 'name' : 'color')
   const [newCategory, setNewCategory] = useState(false)
   const brandOptions = getBrandTabs((brands || []).map(b => ({ brand: b })).concat(form.brand ? [{ brand: form.brand }] : []))
   const [otherBrand, setOtherBrand] = useState(false)
@@ -71,15 +77,19 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
     setUrlInput('')
   }
 
-  const addColor = () => {
-    if (!colorName.trim()) return
-    // Every color starts with its OWN blank size list — never copied from
-    // the general list or from any other color. There is no shared state
-    // between colors at all, so editing one can never affect another,
-    // no matter what order you add colors or pick sizes in.
+  // A "variant" is either a COLOR (shows a color dot) or a NAME (shows its name as a button — e.g.
+  // the different scents of one perfume). Each has its own photo and its own sizes, fully independent.
+  const addVariant = () => {
+    const name = colorName.trim()
+    if (!name) return
+    if ((form.colors || []).some(c => c.name.toLowerCase() === name.toLowerCase())) {
+      setError(`"${name}" is already in the list.`)
+      return
+    }
+    setError('')
     setForm(f => ({
       ...f,
-      colors: [...(f.colors || []), { name: colorName.trim(), hex: colorHex, sizes: [] }],
+      colors: [...(f.colors || []), { name, ...(kind === 'color' ? { hex: colorHex } : {}), sizes: [], image: '' }],
     }))
     setColorName('')
   }
@@ -88,28 +98,40 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
     setForm(f => ({ ...f, colors: f.colors.filter((_, i) => i !== idx) }))
   }
 
-  // General size list — only used for products with no color variation.
-  // Completely separate from colors' own sizes below; toggling this never
-  // touches the colors array.
-  const toggleSize = (size) => {
+  // General size list — only used for products with no colors/names.
+  const setSizes = (sizes) => setForm(f => ({ ...f, sizes }))
+
+  // Each color/name's own size list. Never reads from — or writes to — anything else.
+  const setColorSizes = (idx, sizes) => {
     setForm(f => {
-      const sizes = f.sizes || []
-      const next = sizes.includes(size) ? sizes.filter(s => s !== size) : sortSizes([...sizes, size])
-      return { ...f, sizes: next }
+      const colors = [...f.colors]
+      colors[idx] = { ...colors[idx], sizes }
+      return { ...f, colors }
     })
   }
 
-  // Each color's own size list, toggled independently. Never reads from —
-  // or writes to — the general list or any other color.
-  const toggleColorSize = (colorIdx, size) => {
+  // The photo customers see when they pick this color/name. It is also added to the product's gallery.
+  const setVariantImage = (idx, url) => {
     setForm(f => {
       const colors = [...f.colors]
-      const color = colors[colorIdx]
-      const current = color.sizes || []
-      const next = current.includes(size) ? current.filter(s => s !== size) : sortSizes([...current, size])
-      colors[colorIdx] = { ...color, sizes: next }
-      return { ...f, colors }
+      colors[idx] = { ...colors[idx], image: url }
+      const images = url && !(f.images || []).includes(url) ? [...(f.images || []), url] : f.images
+      return { ...f, colors, images }
     })
+  }
+
+  const uploadVariantImage = async (idx, e) => {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      setVariantImage(idx, await adminUploadProductImage(file))
+    } catch (err) {
+      setError('Photo upload failed: ' + err.message)
+    }
+    setUploading(false)
+    e.target.value = ''
   }
 
   const handleSubmit = async (e) => {
@@ -257,43 +279,36 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
             </div>
 
             <div className="col-span-2">
-              <label className="admin-label">Sizes (US)</label>
+              <label className="admin-label">{scentMode ? 'Sizes (bottle)' : 'Sizes (US)'}</label>
               <p className="text-xs text-2C2C2C/45 mb-2">
-                Used only if this product has no colors below. Once you add a color, set its
-                sizes on that color's own card instead — each color has its own independent list.
+                Used only if this product has no colors or names below — once you add one, set its sizes on its own card
+                instead (each has its own independent list). Tap a size, or type any size you like and press Enter.
               </p>
-              <div className="admin-size-group">
-                {NUMERIC_SIZES.map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={`admin-size-chip ${(form.sizes || []).includes(s) ? 'is-selected' : ''}`}
-                    onClick={() => toggleSize(s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              <div className="admin-size-group mt-2">
-                {LETTER_SIZES.map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={`admin-size-chip ${(form.sizes || []).includes(s) ? 'is-selected' : ''}`}
-                    onClick={() => toggleSize(s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+              <SizePicker value={form.sizes || []} onChange={setSizes} groups={sizeGroups} placeholder={scentMode ? 'e.g. 75 ml' : 'e.g. One size'} />
             </div>
 
             <div className="col-span-2">
-              <label className="admin-label">Colors <span className="admin-label-for">for {form.name.trim() || 'this item'}</span></label>
-              <div className="flex gap-2 mb-3">
-                <input className="admin-input flex-1" placeholder="Color name" value={colorName} onChange={(e) => setColorName(e.target.value)} />
-                <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="admin-color-picker" />
-                <button type="button" onClick={addColor} className="admin-btn-secondary">Add</button>
+              <label className="admin-label">Colors &amp; names <span className="admin-label-for">for {form.name.trim() || 'this item'}</span></label>
+              <p className="text-xs text-2C2C2C/45 mb-2">
+                A <strong>color</strong> shows a color dot. A <strong>name</strong> shows its name as a button — for example the
+                different scents of one perfume. Give each one its own photo: customers see it when they pick it.
+              </p>
+              <div className="flex gap-2 mb-3 flex-wrap">
+                <select className="admin-input variant-kind" value={kind} onChange={(e) => setVariantKind(e.target.value)} aria-label="Type of option">
+                  <option value="color">Color</option>
+                  <option value="name">Name</option>
+                </select>
+                <input
+                  className="admin-input flex-1"
+                  placeholder={kind === 'name' ? 'Name (e.g. Khamrah)' : 'Color name (e.g. Black)'}
+                  value={colorName}
+                  onChange={(e) => setColorName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant() } }}
+                />
+                {kind === 'color' && (
+                  <input type="color" value={colorHex} onChange={(e) => setColorHex(e.target.value)} className="admin-color-picker" />
+                )}
+                <button type="button" onClick={addVariant} className="admin-btn-secondary">Add</button>
               </div>
 
               {(form.colors || []).length > 0 && (
@@ -302,39 +317,41 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
                     <div key={i} className="admin-color-card">
                       <div className="flex items-center justify-between mb-2">
                         <span className="flex items-center gap-2 font-medium text-sm">
-                          <span className="admin-color-dot" style={{ background: c.hex }} />
+                          {c.hex ? <span className="admin-color-dot" style={{ background: c.hex }} /> : <span className="admin-name-badge">Name</span>}
                           {c.name}
                         </span>
-                        <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => removeColor(i)}>
+                        <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => removeColor(i)} aria-label={`Remove ${c.name}`}>
                           <span style={{ fontSize: '14px' }}>&times;</span>
                         </button>
                       </div>
 
-                      <p className="text-xs text-2C2C2C/45 mb-1.5">Sizes available in {c.name}</p>
-                      <div className="admin-size-group">
-                        {NUMERIC_SIZES.map(s => (
-                          <button
-                            key={s}
-                            type="button"
-                            className={`admin-size-chip admin-size-chip-sm ${(c.sizes || []).includes(s) ? 'is-selected' : ''}`}
-                            onClick={() => toggleColorSize(i, s)}
-                          >
-                            {s}
-                          </button>
-                        ))}
+                      <div className="variant-photo">
+                        <div className="variant-photo-preview">
+                          {c.image ? <img src={c.image} alt={`${c.name} photo`} /> : <span>No photo</span>}
+                        </div>
+                        <div className="variant-photo-controls">
+                          <p className="text-xs text-2C2C2C/45 mb-1.5">Photo shown when a customer picks “{c.name}”</p>
+                          {(form.images || []).length > 0 && (
+                            <div className="variant-photo-pick" aria-label="Choose from this product's photos">
+                              {form.images.map((url, k) => (
+                                <button key={k} type="button" className={c.image === url ? 'is-selected' : ''} title="Use this photo" onClick={() => setVariantImage(i, url)}>
+                                  <img src={url} alt="" />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex gap-2 items-center flex-wrap">
+                            <label className="admin-btn-secondary variant-upload">
+                              Upload a photo
+                              <input type="file" accept="image/*" hidden disabled={uploading} onChange={(e) => uploadVariantImage(i, e)} />
+                            </label>
+                            {c.image && <button type="button" className="admin-link-btn" onClick={() => setVariantImage(i, '')}>Remove photo</button>}
+                          </div>
+                        </div>
                       </div>
-                      <div className="admin-size-group mt-1.5">
-                        {LETTER_SIZES.map(s => (
-                          <button
-                            key={s}
-                            type="button"
-                            className={`admin-size-chip admin-size-chip-sm ${(c.sizes || []).includes(s) ? 'is-selected' : ''}`}
-                            onClick={() => toggleColorSize(i, s)}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
+
+                      <p className="text-xs text-2C2C2C/45 mt-3 mb-1.5">Sizes available in {c.name}</p>
+                      <SizePicker small value={c.sizes || []} onChange={(sizes) => setColorSizes(i, sizes)} groups={sizeGroups} placeholder={scentMode ? 'e.g. 75 ml' : 'e.g. One size'} />
                     </div>
                   ))}
                 </div>
