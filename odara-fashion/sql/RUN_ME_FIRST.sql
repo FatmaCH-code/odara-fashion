@@ -36,6 +36,8 @@ $fn$;
 INSERT INTO site_settings (key, value) VALUES ('blend', public.default_blend_config())
 ON CONFLICT (key) DO NOTHING;
 
+ALTER TABLE products ADD COLUMN IF NOT EXISTS size_prices JSONB DEFAULT '{}'::jsonb;   -- { "50 ml": 59.99, "100 ml": 89.99 } — price per size (empty = every size costs the normal price)
+
 CREATE OR REPLACE FUNCTION public.price_cart(p_items jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -150,7 +152,7 @@ BEGIN
         'category', 'Custom Blend', 'blend', v_blend, 'recipe', v_recipe));
     ELSE
       BEGIN v_id := (v_item->>'id')::bigint; EXCEPTION WHEN others THEN v_id := NULL; END;
-      SELECT id, name, price, stock INTO v_prod FROM products WHERE id = v_id;
+      SELECT id, name, price, stock, sizes, colors, size_prices INTO v_prod FROM products WHERE id = v_id;
       IF NOT FOUND THEN
         RAISE EXCEPTION 'An item in your cart is no longer available — please remove it and try again.';
       END IF;
@@ -162,6 +164,23 @@ BEGIN
       END IF;
 
       v_price := v_prod.price;
+      -- Per-size prices (Admin -> Products -> "Price for each size"). Only a size the product really offers
+      -- is accepted, so a made-up size can never fall back to a cheaper base price.
+      IF v_prod.size_prices IS NOT NULL AND v_prod.size_prices <> '{}'::jsonb THEN
+        IF v_size IS NULL OR NOT (
+             coalesce(v_prod.sizes, '[]'::jsonb) ? v_size
+             OR EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(v_prod.colors, '[]'::jsonb)) c,
+                               jsonb_array_elements_text(coalesce(c->'sizes', '[]'::jsonb)) s WHERE s = v_size)
+           ) THEN
+          RAISE EXCEPTION 'Please choose a size for "%".', v_prod.name;
+        END IF;
+        IF v_prod.size_prices ? v_size THEN
+          v_price := (v_prod.size_prices ->> v_size)::numeric;
+        END IF;
+        IF v_price IS NULL OR v_price <= 0 THEN
+          RAISE EXCEPTION 'This size is not available right now.';
+        END IF;
+      END IF;
       -- Name is rebuilt from the real product name + the chosen color/size (never taken from the browser).
       IF v_color IS NOT NULL OR v_size IS NOT NULL THEN
         v_name := v_prod.name || ' (' ||

@@ -22,3 +22,24 @@ export function shippingFor(amount, shipping, location) {
   const fee = fees[zone - 1] != null ? fees[zone - 1] : DEFAULT_ZONE_FEES[zone - 1]
   return round2(Math.min(500, Math.max(0, Number(fee))))
 }
+
+
+// ---- Price for each size (Admin -> Products -> "Price for each size") ----
+export const fmtMoney = (n) => (Number(n) % 1 === 0 ? String(Number(n)) : Number(n).toFixed(2))
+
+// The price of a chosen size; a size with no price of its own costs the normal product price.
+export const priceForSize = (product, size) => {
+  const own = size && product.sizePrices ? Number(product.sizePrices[size]) : NaN
+  return own > 0 ? own : Number(product.price)
+}
+
+// For listings: the lowest price, but only when the sizes do not all cost the same ("From $59.99").
+export function priceFrom(product) {
+  const prices = product.sizePrices || {}
+  if (Object.keys(prices).length === 0) return null
+  const offered = new Set([...(product.sizes || []), ...(product.colors || []).flatMap(c => c.sizes || [])])
+  if (offered.size === 0) return null
+  const all = [...offered].map(sz => priceForSize(product, sz))
+  const min = Math.min(...all)
+  return min < Math.max(...all) ? min : null
+}

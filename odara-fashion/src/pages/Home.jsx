@@ -172,6 +172,7 @@ export default function Home() {
           <h2 className="text-4xl font-playfair mb-4">{settings.welcomeOffer.enabled ? `${percent}% off your first order` : 'Stay Updated'}</h2>
           <p className="mb-6">Join the list for early access to new arrivals, best sellers and exclusive offers</p>
           <NewsletterForm source="home" inputPlaceholder="Enter your email" buttonLabel="Subscribe" />
+          <p className="newsletter-review-link">Already shopped with us? <Link to="/about#review">Leave a quick review</Link></p>
         </div>
       </section>
 

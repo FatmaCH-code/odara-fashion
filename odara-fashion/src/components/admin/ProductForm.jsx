@@ -1,22 +1,72 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { adminUploadProductImage } from '../../services/products'
 import { NUMERIC_SIZES, LETTER_SIZES, ML_SIZES } from '../../utils/sizes'
 import SizePicker from './SizePicker'
+import { sortSizes } from '../../utils/sizes'
 import { PERFUME_BRANDS, PERFUME_CATEGORY, OIL_CATEGORY, isPerfumeCategory, isOilCategory, getBrandTabs } from '../../utils/categories'
 
 const EMPTY = {
   name: '', price: '', originalPrice: '', category: '', brand: '', images: [],
-  isNew: false, isSale: false, isBest: false, stock: 20, description: '', colors: [], sizes: [],
+  isNew: false, isSale: false, isBest: false, stock: 20, description: '', colors: [], sizes: [], sizePrices: {},
 }
 
+// What an untouched form looks like for this product.
+const buildBase = (product) => product ? {
+  ...EMPTY,
+  ...product,
+  price: product.price ?? '',
+  originalPrice: product.originalPrice ?? '',
+  images: product.images && product.images.length > 0 ? product.images : (product.image ? [product.image] : []),
+} : EMPTY
+
+// Unsaved edits are kept on this device while you work, so leaving the page and coming back
+// (or a refresh, or the browser reloading the tab) never loses what you typed.
+const DRAFT_PREFIX = 'odara-draft-product-'
+const DRAFT_MAX_AGE = 7 * 24 * 60 * 60 * 1000
+const readDraft = (key) => {
+  try {
+    const d = JSON.parse(localStorage.getItem(key) || 'null')
+    return d && d.form && Date.now() - d.savedAt < DRAFT_MAX_AGE ? d : null
+  } catch { return null }
+}
+const writeDraft = (key, d) => { try { localStorage.setItem(key, JSON.stringify(d)) } catch { /* storage full / private mode */ } }
+const clearDraft = (key) => { try { localStorage.removeItem(key) } catch { /* ignore */ } }
+
 export default function ProductForm({ product, onSave, onCancel, categories, brands }) {
-  const [form, setForm] = useState(product ? {
-    ...EMPTY,
-    ...product,
-    price: product.price ?? '',
-    originalPrice: product.originalPrice ?? '',
-    images: product.images && product.images.length > 0 ? product.images : (product.image ? [product.image] : []),
-  } : EMPTY)
+  const draftKey = DRAFT_PREFIX + (product ? product.id : 'new')
+  const baseRef = useRef(null)
+  if (!baseRef.current) baseRef.current = { form: buildBase(product), sig: JSON.stringify(buildBase(product)) }
+  const restoredFrom = useRef(null)
+
+  const [form, setForm] = useState(() => {
+    const d = readDraft(draftKey)
+    // Only restore a draft made from the SAME saved version of this product — if the product was
+    // changed since, the old draft would overwrite newer data, so it is dropped instead.
+    if (d && d.base === baseRef.current.sig) { restoredFrom.current = d.savedAt; return d.form }
+    if (d) clearDraft(draftKey)
+    return baseRef.current.form
+  })
+  const [restoredAt, setRestoredAt] = useState(restoredFrom.current)
+  const dirty = JSON.stringify(form) !== baseRef.current.sig
+
+  useEffect(() => {
+    if (!dirty) { clearDraft(draftKey); return }
+    const t = setTimeout(() => writeDraft(draftKey, { form, base: baseRef.current.sig, savedAt: Date.now() }), 300)
+    return () => clearTimeout(t)
+  }, [form])
+
+  const discardDraft = () => {
+    clearDraft(draftKey)
+    setForm(baseRef.current.form)
+    setRestoredAt(null)
+  }
+
+  // Cancel asks first if there is something to lose; clicking outside the box never closes it by accident.
+  const requestClose = () => {
+    if (dirty && !window.confirm('Discard your unsaved changes?')) return
+    clearDraft(draftKey)
+    onCancel()
+  }
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -98,6 +148,14 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
     setForm(f => ({ ...f, colors: f.colors.filter((_, i) => i !== idx) }))
   }
 
+  // Every size this product is offered in (general list + each color/name's own list), in order.
+  const allSizes = sortSizes([...new Set([...(form.sizes || []), ...(form.colors || []).flatMap(c => c.sizes || [])])])
+  const setSizePrice = (size, value) => setForm(f => {
+    const sizePrices = { ...(f.sizePrices || {}) }
+    if (value === '') delete sizePrices[size]; else sizePrices[size] = value
+    return { ...f, sizePrices }
+  })
+
   // General size list — only used for products with no colors/names.
   const setSizes = (sizes) => setForm(f => ({ ...f, sizes }))
 
@@ -150,20 +208,30 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
         originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,
         stock: parseInt(form.stock) || 0,
       })
+      clearDraft(draftKey)
     } catch (err) {
-      setError(err.message)
+      setError(/size_prices/.test(err.message || '')
+        ? 'Prices per size need a one-time database update: run sql/size_prices.sql in Supabase (see SETUP.md), then save again.'
+        : err.message)
       setSaving(false)
     }
   }
 
   return (
-    <div className="admin-modal-backdrop" onClick={onCancel}>
+    <div className="admin-modal-backdrop" onClick={() => { if (!dirty) onCancel() }}>
       <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
         {/* Stays pinned while you scroll, so you always see WHICH item you are editing */}
         <div className="admin-modal-sticky">
           <h2 className="admin-modal-title">{product ? 'Edit Product' : 'Add Product'}</h2>
           <p className="admin-modal-itemname" title={form.name}>{form.name.trim() || 'Untitled item'}</p>
         </div>
+
+        {restoredAt && dirty && (
+          <div className="admin-draft-note" role="status">
+            <span>Your unsaved changes from {new Date(restoredAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} were restored.</span>
+            <button type="button" className="admin-link-btn" onClick={discardDraft}>Discard changes</button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -357,12 +425,39 @@ export default function ProductForm({ product, onSave, onCancel, categories, bra
                 </div>
               )}
             </div>
+
+            {allSizes.length > 0 && (
+              <div className="col-span-2">
+                <label className="admin-label">Price for each size</label>
+                <p className="text-xs text-2C2C2C/45 mb-2">
+                  Give a size its own price — for example 50 ml → 59.99 and 100 ml → 89.99. Leave a size empty to use the
+                  normal price{form.price ? ` ($${form.price})` : ''}. Shoppers see the price of the size they pick.
+                </p>
+                <div className="size-price-list">
+                  {allSizes.map(sz => (
+                    <div key={sz} className="size-price-row">
+                      <span className="size-price-label">{sz}</span>
+                      <div className="size-price-input">
+                        <span>$</span>
+                        <input
+                          type="number" step="0.01" min="0" inputMode="decimal" className="admin-input"
+                          placeholder={form.price ? String(form.price) : 'Normal price'}
+                          value={(form.sizePrices || {})[sz] ?? ''}
+                          onChange={(e) => setSizePrice(sz, e.target.value)}
+                          aria-label={`Price for ${sz}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onCancel} className="admin-btn-secondary flex-1">Cancel</button>
+            <button type="button" onClick={requestClose} className="admin-btn-secondary flex-1">Cancel</button>
             <button type="submit" disabled={saving || uploading} className="admin-btn-primary flex-1">
               {saving ? 'Saving…' : 'Save Product'}
             </button>

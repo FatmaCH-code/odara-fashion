@@ -4,6 +4,7 @@ import { useCartStore } from '../store/cartStore'
 import { useProducts } from '../hooks/useProducts'
 import { useUiStore } from '../store/uiStore'
 import { buildCartItem, sizesFor } from '../utils/cartItem'
+import { priceForSize, priceFrom, fmtMoney } from '../utils/pricing'
 import ProductReviews from '../components/ProductReviews'
 import StarRating from '../components/StarRating'
 import { useReviews, summarize } from '../hooks/useReviews'
@@ -108,8 +109,10 @@ export default function ProductPage() {
               <p className="product-category-label">{product.brand ? `${product.brand} · ${product.category}` : product.category}</p>
               <h1 className="text-4xl font-playfair text-2C2C2C mb-4">{product.name}</h1>
               <p className="text-3xl text-C9A876 font-semibold mb-6">
-                ${product.price}
-                {product.originalPrice && (
+                {!selectedSize && priceFrom(product) != null
+                  ? <>From ${fmtMoney(priceFrom(product))}</>
+                  : <>${fmtMoney(selectedSize ? priceForSize(product, selectedSize) : product.price)}</>}
+                {product.originalPrice && Object.keys(product.sizePrices || {}).length === 0 && (
                   <span className="ml-3 text-xl line-through text-2C2C2C/40">${product.originalPrice}</span>
                 )}
               </p>

@@ -2578,3 +2578,32 @@ footer li {
 .variant-photo-pick button.is-selected { border-color: #C9A876; box-shadow: 0 0 0 1px #C9A876; }
 .variant-photo-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .variant-upload { cursor: pointer; display: inline-block; font-size: 13px; padding: 0.45rem 0.9rem; }
+
+
+/* ---------- Review box: small, on the About page ---------- */
+.about-review { padding: 3rem 1.5rem 1rem; }
+.review-box-small { max-width: 430px; margin: 0 auto; padding: 1.5rem 1.5rem 1.3rem; background: #fff; border: 1px solid #E8D9C4; border-radius: 16px; text-align: left; box-shadow: 0 14px 34px -26px rgba(0, 0, 0, 0.35); }
+.review-box-small h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; margin: 0 0 0.25rem; color: #14100d; }
+.review-box-small > p { margin: 0 0 1rem; font-size: 0.88rem; color: #6b5d4d; }
+.review-form-compact { gap: 0.55rem; }
+.review-form-compact input, .review-form-compact textarea { padding: 0.55rem 0.8rem; font-size: 15px; border-radius: 10px; }
+.review-form-compact .star-input svg { width: 24px; height: 24px; }
+.review-form-compact .btn-gold { padding: 0.7rem 1rem; font-size: 0.75rem; }
+.reviews-write { text-align: center; margin-top: 1.4rem; font-size: 0.85rem; }
+.reviews-write a { color: #a5825a; text-decoration: underline; }
+
+/* the small line inside the black newsletter box */
+.newsletter-review-link { margin: 1.1rem 0 0; font-size: 0.82rem; color: rgba(255, 255, 255, 0.62); }
+.newsletter-review-link a { color: #E9D9BC; text-decoration: underline; }
+.newsletter-review-link a:hover { color: #fff; }
+
+/* ---------- Admin: restored-draft notice ---------- */
+.admin-draft-note { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 0 0 1rem; padding: 0.65rem 0.9rem; background: #FFF6E0; border: 1px solid #EBD9A8; border-radius: 10px; font-size: 0.85rem; color: #6b5420; }
+
+
+/* ---------- Admin: price for each size ---------- */
+.size-price-list { display: grid; gap: 0.5rem; max-width: 360px; }
+.size-price-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.4rem 0.7rem; background: #FAF6EE; border: 1px solid #EBDDC4; border-radius: 10px; }
+.size-price-label { font-weight: 600; font-size: 0.9rem; min-width: 70px; }
+.size-price-input { display: flex; align-items: center; gap: 0.35rem; }
+.size-price-input .admin-input { width: 120px; padding-top: 0.4rem; padding-bottom: 0.4rem; }

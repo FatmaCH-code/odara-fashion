@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Instagram, Facebook, MapPin, Mail, Gem, Droplets, Sparkles } from 'lucide-react'
 import heroImage from '../assets/hero-traditional-dress.jpg'
 import odaraEmblem from '../assets/odara-emblem.png'
+import ReviewForm from '../components/ReviewForm'
 
 export default function About() {
   return (
@@ -56,6 +57,17 @@ export default function About() {
                 <p>{text}</p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* A small box to leave a review (saved as pending until it is approved in Admin → Reviews) */}
+      <section className="about-review" id="review">
+        <div className="container-premium">
+          <div className="review-box-small">
+            <h3>Share your experience</h3>
+            <p>Bought from Odara? Tell us what you thought — we read every one.</p>
+            <ReviewForm compact />
           </div>
         </div>
       </section>

@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useUiStore } from '../store/uiStore'
 import { useReviews, summarize } from '../hooks/useReviews'
 import StarRating from './StarRating'
+import { priceFrom, fmtMoney } from '../utils/pricing'
 
 export default function ProductCard({ product, isSale, isNew }) {
   const openQuickAdd = useUiStore(s => s.openQuickAdd)
@@ -49,8 +50,8 @@ export default function ProductCard({ product, isSale, isNew }) {
             </p>
           )}
           <p className="product-price-premium">
-            ${product.price}
-            {product.originalPrice && (
+            {priceFrom(product) != null ? <>From ${fmtMoney(priceFrom(product))}</> : <>${product.price}</>}
+            {product.originalPrice && Object.keys(product.sizePrices || {}).length === 0 && (
               <span className="ml-2 text-sm line-through text-2C2C2C/40">${product.originalPrice}</span>
             )}
           </p>

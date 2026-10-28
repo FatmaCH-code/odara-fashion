@@ -262,4 +262,9 @@ Everything below is managed from the admin — no code needed.
   changes the big photo (and the photo in Quick Add and in the bag). Hovering a color dot on a product card previews it.
 - **Sizes**: clothes get US/letter sizes, perfumes and oils get **30 ml / 50 ml / 100 ml** — and for any product you can
   **type your own size** (e.g. "75 ml", "One size") and press Enter. Sizes always show in a sensible order.
-- Every size currently has the **same price** (the product price). Per-size prices are not set up yet.
+- **Price for each size**: below the sizes, every size the product is sold in has its own price box (e.g. 50 ml → 59.99,
+  100 ml → 89.99). Leave one empty to use the normal product price. Shoppers see "From $59.99" on the shop and the exact
+  price once they pick a size; the bag, checkout and Stripe all charge that size's price. The server does the pricing, so it
+  can't be changed from the browser.
+  **One-time step:** run `sql/size_prices.sql` in Supabase → SQL Editor (new query → paste → Run). Until you do, the
+  price boxes show but saving a price tells you to run it. (If you re-run `RUN_ME_FIRST.sql` instead, it includes this too.)

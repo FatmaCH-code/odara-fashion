@@ -3,7 +3,7 @@ import { StarInput } from './StarRating'
 import { submitReview } from '../services/reviews'
 
 // Saved as "pending" — it only appears on the site after the owner approves it.
-export default function ReviewForm({ productId = null, onDone }) {
+export default function ReviewForm({ productId = null, onDone, compact = false }) {
   const [name, setName] = useState('')
   const [rating, setRating] = useState(0)
   const [body, setBody] = useState('')
@@ -31,14 +31,14 @@ export default function ReviewForm({ productId = null, onDone }) {
   }
 
   return (
-    <form className="review-form" onSubmit={submit}>
+    <form className={`review-form ${compact ? 'review-form-compact' : ''}`} onSubmit={submit}>
       <StarInput value={rating} onChange={setRating} />
       <input
         type="text" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)}
         placeholder="Your name (e.g. Sara A.)" aria-label="Your name" autoComplete="given-name"
       />
       <textarea
-        required minLength={3} maxLength={1000} rows={4} value={body} onChange={(e) => setBody(e.target.value)}
+        required minLength={3} maxLength={1000} rows={compact ? 3 : 4} value={body} onChange={(e) => setBody(e.target.value)}
         placeholder="Tell others what you thought…" aria-label="Your review"
       />
       <input type="text" tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} className="hp-field" aria-hidden="true" name="website" />

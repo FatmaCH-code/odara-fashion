@@ -22,6 +22,9 @@ function fromRow(row) {
     // Position in Admin → New & Best (undefined if the column isn't in the database yet)
     newOrder: row.new_order,
     bestOrder: row.best_order,
+    // Price per size, e.g. { "50 ml": 59.99, "100 ml": 89.99 } — hasSizePrices tells us the database column exists yet
+    sizePrices: row.size_prices || {},
+    hasSizePrices: row.size_prices !== undefined,
     stock: row.stock,
   }
 }
@@ -33,6 +36,14 @@ function toRow(product) {
   const orders = {}
   if (product.newOrder !== undefined) orders.new_order = product.newOrder
   if (product.bestOrder !== undefined) orders.best_order = product.bestOrder
+  // Only sizes the product really offers keep a price; empty/0 = "use the normal price".
+  const offered = new Set([...(product.sizes || []), ...(product.colors || []).flatMap(c => c.sizes || [])])
+  const sizePrices = {}
+  Object.entries(product.sizePrices || {}).forEach(([size, v]) => {
+    const n = Math.round(parseFloat(v) * 100) / 100
+    if (offered.has(size) && n > 0) sizePrices[size] = n
+  })
+  if (Object.keys(sizePrices).length > 0 || product.hasSizePrices) orders.size_prices = sizePrices
   return {
     ...orders,
     name: product.name,
