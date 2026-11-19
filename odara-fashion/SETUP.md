@@ -262,9 +262,20 @@ Everything below is managed from the admin — no code needed.
   changes the big photo (and the photo in Quick Add and in the bag). Hovering a color dot on a product card previews it.
 - **Sizes**: clothes get US/letter sizes, perfumes and oils get **30 ml / 50 ml / 100 ml** — and for any product you can
   **type your own size** (e.g. "75 ml", "One size") and press Enter. Sizes always show in a sensible order.
-- **Price for each size**: below the sizes, every size the product is sold in has its own price box (e.g. 50 ml → 59.99,
-  100 ml → 89.99). Leave one empty to use the normal product price. Shoppers see "From $59.99" on the shop and the exact
-  price once they pick a size; the bag, checkout and Stripe all charge that size's price. The server does the pricing, so it
-  can't be changed from the browser.
-  **One-time step:** run `sql/size_prices.sql` in Supabase → SQL Editor (new query → paste → Run). Until you do, the
-  price boxes show but saving a price tells you to run it. (If you re-run `RUN_ME_FIRST.sql` instead, it includes this too.)
+- Every size currently has the **same price** (the product price). Per-size prices are not set up yet.
+
+## Buy one, get one free (clothing)
+
+1. In Supabase **SQL Editor**, run `sql/bogo_offer.sql` once (after `RUN_ME_FIRST.sql`). It adds the
+   server-side rule so customers are charged exactly what their bag shows.
+2. If you use Stripe, redeploy the functions: `supabase functions deploy create-checkout-session` and
+   `supabase functions deploy stripe-webhook`.
+3. **Admin → Offers → Buy one, get one free**: switch it on, tick the products that can be given free, save.
+
+How it works: for every clothing item the customer pays for, one of the ticked gift pieces is free
+(cheapest first). The welcome code then applies to what's left. Orders show the free units as “1 free”.
+
+## Export products
+
+**Admin → Products → Export CSV** downloads every product (or just the ones matching your search) with
+its details and links to its photos. Opens in Excel or Google Sheets.

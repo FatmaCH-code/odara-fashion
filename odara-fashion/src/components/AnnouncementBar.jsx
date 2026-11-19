@@ -14,6 +14,7 @@ export default function AnnouncementBar() {
   const messages = []
   if (a.enabled) {
     if (Number(s.freeOver) > 0 && Number(s.flatFee) > 0) messages.push(`Free shipping on orders over $${fmt(s.freeOver)}`)
+    if (settings.bogo && settings.bogo.enabled && (settings.bogo.freeIds || []).length) messages.push('Buy one clothing piece, get a gift piece free')
     if (w.enabled) messages.push(`Enjoy ${w.percent}% off your first order — join our list`)
     const custom = (a.text || '').trim()
     if (custom && !messages.some(m => m.toLowerCase() === custom.toLowerCase())) messages.push(custom)

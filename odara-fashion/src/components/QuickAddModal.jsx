@@ -5,7 +5,6 @@ import { X } from 'lucide-react'
 import { useCartStore } from '../store/cartStore'
 import { useUiStore } from '../store/uiStore'
 import { buildCartItem, sizesFor } from '../utils/cartItem'
-import { priceForSize, priceFrom, fmtMoney } from '../utils/pricing'
 
 // "Quick add" from any product card: pick color + size, add, and the bag slides open.
 export default function QuickAddModal() {
@@ -60,8 +59,8 @@ export default function QuickAddModal() {
           <p className="qa-cat">{product.brand || product.category}</p>
           <h3 className="qa-name">{product.name}</h3>
           <p className="qa-price">
-            {!size && priceFrom(product) != null ? <>From ${fmtMoney(priceFrom(product))}</> : <>${fmtMoney(size ? priceForSize(product, size) : product.price)}</>}
-            {product.originalPrice && Object.keys(product.sizePrices || {}).length === 0 && <span>${product.originalPrice}</span>}
+            ${product.price}
+            {product.originalPrice && <span>${product.originalPrice}</span>}
           </p>
 
           {product.colors && product.colors.length > 0 && (

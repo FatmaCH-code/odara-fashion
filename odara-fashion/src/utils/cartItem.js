@@ -1,5 +1,4 @@
 import { sortSizes } from './sizes'
-import { priceForSize } from './pricing'
 
 // Sizes a shopper can pick: the chosen color's own list if the admin set one, else the product's.
 export const sizesFor = (product, color) =>
@@ -12,7 +11,7 @@ export function buildCartItem(product, color, size, quantity = 1) {
   return {
     id: product.id,
     name: variant ? `${product.name} (${variant})` : product.name,
-    price: priceForSize(product, size),
+    price: product.price,
     image: (color && color.image) || product.image,
     color: color ? color.name : undefined,
     size: size || undefined,

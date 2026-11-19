@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react'
+import { X, Minus, Plus, Trash2, ShoppingBag, Gift } from 'lucide-react'
 import { useCartStore, getLineId } from '../store/cartStore'
 import { useUiStore } from '../store/uiStore'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { shippingFor } from '../utils/pricing'
+import { useBogo } from '../hooks/useBogo'
 
 const money = (n) => `$${Number(n).toFixed(2)}`
 
@@ -15,6 +16,7 @@ export default function CartDrawer() {
   const close = useUiStore(s => s.closeCart)
   const { items, removeItem, updateQuantity } = useCartStore()
   const { settings } = useSiteSettings()
+  const bogo = useBogo(items)
 
   useEffect(() => {
     if (!open) return
@@ -26,7 +28,8 @@ export default function CartDrawer() {
 
   if (!open) return null
 
-  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  const fullSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  const subtotal = fullSubtotal - bogo.amount   // what they pay for goods after "buy one get one free"
   const shipping = shippingFor(subtotal, settings.shipping)   // null = depends on the address (asked at checkout)
   const freeOver = Number(settings.shipping.freeOver || 0)
   const canFreeShip = freeOver > 0 && (settings.shipping.byZone !== false || Number(settings.shipping.flatFee || 0) > 0)
@@ -54,6 +57,27 @@ export default function CartDrawer() {
           </div>
         )}
 
+        {bogo.active && items.length > 0 && (bogo.unclaimed > 0 || (bogo.giftsInCart > 0 && bogo.amount === 0)) && (
+          <div className="drawer-bogo">
+            <p>
+              <Gift className="w-4 h-4" />
+              {bogo.unclaimed > 0
+                ? <>You've earned <strong>{bogo.unclaimed} free gift{bogo.unclaimed > 1 ? 's' : ''}</strong> — pick {bogo.unclaimed > 1 ? 'them' : 'one'}:</>
+                : <>Add any clothing item and your gift piece is <strong>free</strong>.</>}
+            </p>
+            {bogo.unclaimed > 0 && (
+              <div className="drawer-bogo-gifts">
+                {bogo.giftProducts.slice(0, 6).map(p => (
+                  <Link key={p.id} to={`/product/${p.id}`} onClick={close} title={p.name}>
+                    {p.image ? <img src={p.image} alt="" /> : <span />}
+                    <em>{p.name}</em>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {items.length === 0 ? (
           <div className="drawer-empty">
             <ShoppingBag className="w-10 h-10" />
@@ -65,12 +89,17 @@ export default function CartDrawer() {
             <ul className="drawer-items">
               {items.map(item => {
                 const lineId = getLineId(item)
+                const free = bogo.freeByLine[lineId] || 0
                 return (
                   <li key={lineId} className="drawer-item">
                     {item.image ? <img src={item.image} alt="" /> : <div className="drawer-item-ph" />}
                     <div className="drawer-item-main">
                       <p className="drawer-item-name">{item.name}</p>
-                      <p className="drawer-item-price">{money(item.price)}</p>
+                      <p className="drawer-item-price">
+                        {free > 0 && free === item.quantity
+                          ? <><s>{money(item.price)}</s> <span className="free-tag">Free</span></>
+                          : <>{money(item.price)}{free > 0 && <span className="free-tag">{free} free</span>}</>}
+                      </p>
                       <div className="drawer-qty">
                         <button type="button" aria-label="Fewer" onClick={() => updateQuantity(lineId, item.quantity - 1)}><Minus className="w-3.5 h-3.5" /></button>
                         <span>{item.quantity}</span>
@@ -84,6 +113,9 @@ export default function CartDrawer() {
             </ul>
 
             <footer className="drawer-foot">
+              {bogo.amount > 0 && (
+                <div className="drawer-row drawer-row-muted drawer-row-tight"><span>Buy one, get one free</span><span>−{money(bogo.amount)}</span></div>
+              )}
               <div className="drawer-row"><span>Subtotal</span><span>{money(subtotal)}</span></div>
               <div className="drawer-row drawer-row-muted"><span>Shipping</span><span>{shipping === null ? 'Calculated at checkout' : shipping > 0 ? money(shipping) : 'Free'}</span></div>
               <Link to="/checkout" className="btn-gold drawer-checkout" onClick={close}>Checkout · {money(subtotal + (shipping || 0))}</Link>

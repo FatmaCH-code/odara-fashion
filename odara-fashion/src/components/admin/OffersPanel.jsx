@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { loadSiteSettings, adminSaveSiteSettings } from '../../services/settings'
 import { ZONES, DEFAULT_ZONE_FEES, DEFAULT_INTERNATIONAL_FEE } from '../../utils/shippingZones'
+import { adminListProducts } from '../../services/products'
+import { isFashion } from '../../utils/categories'
 
 const Toggle = ({ on, onChange, label }) => (
   <button type="button" className={`admin-toggle ${on ? 'is-on' : ''}`} onClick={() => onChange(!on)} aria-label={label} aria-pressed={on}>
@@ -14,13 +16,27 @@ export default function OffersPanel() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  const [products, setProducts] = useState([])
+  const [giftSearch, setGiftSearch] = useState('')
+
   useEffect(() => { loadSiteSettings(true).then(setForm) }, [])
+  useEffect(() => { adminListProducts().then(setProducts).catch(() => {}) }, [])
 
   if (!form) return <p className="text-2C2C2C/50">Loading…</p>
 
   const setOffer = (patch) => setForm(f => ({ ...f, welcomeOffer: { ...f.welcomeOffer, ...patch } }))
   const setBar = (patch) => setForm(f => ({ ...f, announcement: { ...f.announcement, ...patch } }))
   const setShip = (patch) => setForm(f => ({ ...f, shipping: { ...f.shipping, ...patch } }))
+  const setBogo = (patch) => setForm(f => ({ ...f, bogo: { ...f.bogo, ...patch } }))
+
+  const giftIds = (form.bogo.freeIds || []).map(Number)
+  const toggleGift = (id) => setBogo({ freeIds: giftIds.includes(id) ? giftIds.filter(x => x !== id) : [...giftIds, id] })
+  const gifts = giftIds.map(id => products.find(p => Number(p.id) === id)).filter(Boolean)
+  const q = giftSearch.trim().toLowerCase()
+  // Clothing first (that's what the offer is about), then everything else.
+  const pickable = products
+    .filter(p => !q || p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q))
+    .sort((a, b) => Number(isFashion(b)) - Number(isFashion(a)) || a.name.localeCompare(b.name))
 
   const save = async (e) => {
     e.preventDefault()
@@ -35,7 +51,10 @@ export default function OffersPanel() {
       const freeOver = Math.max(0, parseFloat(form.shipping.freeOver) || 0)
       const zones = ZONES.map((_, i) => Math.min(500, Math.max(0, parseFloat((form.shipping.zones || [])[i]) || 0)))
       const international = Math.min(500, Math.max(0, parseFloat(form.shipping.international) || 0))
-      const next = { ...form, welcomeOffer: { ...form.welcomeOffer, percent, code, delaySeconds }, shipping: { flatFee, freeOver, byZone: form.shipping.byZone !== false, zones, international } }
+      // Only keep gift ids that still exist (a deleted product can't be a gift).
+      const freeIds = [...new Set(giftIds)].filter(id => !products.length || products.some(p => Number(p.id) === id))
+      if (form.bogo.enabled && freeIds.length === 0) throw new Error('Pick at least one free gift piece for “Buy one, get one free”, or switch it off.')
+      const next = { ...form, welcomeOffer: { ...form.welcomeOffer, percent, code, delaySeconds }, shipping: { flatFee, freeOver, byZone: form.shipping.byZone !== false, zones, international }, bogo: { enabled: !!form.bogo.enabled, freeIds } }
       await adminSaveSiteSettings(next)
       setForm(next)
       setMessage('Saved — the site updates on the next page load.')
@@ -91,6 +110,58 @@ export default function OffersPanel() {
         <label className="admin-label">Extra message (optional)</label>
         <input className="admin-input" value={form.announcement.text} onChange={(e) => setBar({ text: e.target.value })} />
         <p className="text-xs text-2C2C2C/50 mt-2">Leave empty to show only your real offers.</p>
+      </div>
+
+      <div className="admin-panel-card mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-playfair text-lg">Buy one, get one free — clothing</h2>
+            <p className="text-xs text-2C2C2C/50">
+              For every clothing item a customer pays for, one of the gift pieces you tick below is free.
+              If they add two gift pieces and nothing else, the cheaper one is free.
+            </p>
+          </div>
+          <Toggle on={!!form.bogo.enabled} onChange={(v) => setBogo({ enabled: v })} label="Buy one get one free on/off" />
+        </div>
+
+        <p className="admin-label">Free gift pieces ({gifts.length})</p>
+        {gifts.length === 0 ? (
+          <p className="text-xs text-2C2C2C/50 mb-4">None yet — tick the products below that can be given free.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {gifts.map(p => (
+              <span key={p.id} className="admin-gift-chip">
+                {p.image && <img src={p.image} alt="" />}
+                {p.name}
+                <button type="button" onClick={() => toggleGift(Number(p.id))} aria-label={`Remove ${p.name}`}>×</button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <input className="admin-input mb-3" placeholder="Search products to add as a free gift…" value={giftSearch} onChange={(e) => setGiftSearch(e.target.value)} />
+        <div className="admin-gift-list">
+          {pickable.map(p => {
+            const on = giftIds.includes(Number(p.id))
+            return (
+              <label key={p.id} className={`admin-gift-row ${on ? 'is-on' : ''}`}>
+                <input type="checkbox" checked={on} onChange={() => toggleGift(Number(p.id))} />
+                {p.image ? <img src={p.image} alt="" /> : <span className="admin-gift-ph" />}
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium truncate">{p.name}</span>
+                  <span className="block text-xs text-2C2C2C/50">{p.category}{!isFashion(p) && ' · not clothing'}</span>
+                </span>
+                <span className="text-sm">${p.price}</span>
+              </label>
+            )
+          })}
+          {pickable.length === 0 && <p className="text-xs text-2C2C2C/50 p-3">No products match.</p>}
+        </div>
+        <p className="text-xs text-2C2C2C/50 mt-3">
+          Shoppers see “Buy one, get one free” in the top bar, a <strong>Free gift</strong> tag on these pieces, and a
+          “pick your free gift” suggestion in their bag. Works together with the welcome code (the code applies to what's left to pay).
+          Needs <strong>sql/bogo_offer.sql</strong> run once in Supabase.
+        </p>
       </div>
 
       <div className="admin-panel-card mb-6">

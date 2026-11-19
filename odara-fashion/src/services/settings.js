@@ -8,12 +8,15 @@ export const DEFAULT_SETTINGS = {
   // Flat fee per order; orders at/above `freeOver` ship free (0 = never free). Fee 0 = free shipping for everyone.
   // byZone: price by distance from Ohio (zones[0..4] = Zone 1..5, `international` = outside the US); off = the flat fee for everyone.
   shipping: { flatFee: 10, freeOver: 0, byZone: true, zones: [5.99, 7.99, 9.99, 12.99, 15.99], international: 29.99 },
+  // Buy one clothing item, get one of the admin's chosen gift pieces (freeIds = product ids) free.
+  bogo: { enabled: false, freeIds: [] },
 }
 
 const merge = (v) => ({
   announcement: { ...DEFAULT_SETTINGS.announcement, ...((v && v.announcement) || {}) },
   welcomeOffer: { ...DEFAULT_SETTINGS.welcomeOffer, ...((v && v.welcomeOffer) || {}) },
   shipping: { ...DEFAULT_SETTINGS.shipping, ...((v && v.shipping) || {}) },
+  bogo: { ...DEFAULT_SETTINGS.bogo, ...((v && v.bogo) || {}) },
 })
 
 let cached = null

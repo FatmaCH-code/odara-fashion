@@ -2579,31 +2579,23 @@ footer li {
 .variant-photo-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .variant-upload { cursor: pointer; display: inline-block; font-size: 13px; padding: 0.45rem 0.9rem; }
 
-
-/* ---------- Review box: small, on the About page ---------- */
-.about-review { padding: 3rem 1.5rem 1rem; }
-.review-box-small { max-width: 430px; margin: 0 auto; padding: 1.5rem 1.5rem 1.3rem; background: #fff; border: 1px solid #E8D9C4; border-radius: 16px; text-align: left; box-shadow: 0 14px 34px -26px rgba(0, 0, 0, 0.35); }
-.review-box-small h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; margin: 0 0 0.25rem; color: #14100d; }
-.review-box-small > p { margin: 0 0 1rem; font-size: 0.88rem; color: #6b5d4d; }
-.review-form-compact { gap: 0.55rem; }
-.review-form-compact input, .review-form-compact textarea { padding: 0.55rem 0.8rem; font-size: 15px; border-radius: 10px; }
-.review-form-compact .star-input svg { width: 24px; height: 24px; }
-.review-form-compact .btn-gold { padding: 0.7rem 1rem; font-size: 0.75rem; }
-.reviews-write { text-align: center; margin-top: 1.4rem; font-size: 0.85rem; }
-.reviews-write a { color: #a5825a; text-decoration: underline; }
-
-/* the small line inside the black newsletter box */
-.newsletter-review-link { margin: 1.1rem 0 0; font-size: 0.82rem; color: rgba(255, 255, 255, 0.62); }
-.newsletter-review-link a { color: #E9D9BC; text-decoration: underline; }
-.newsletter-review-link a:hover { color: #fff; }
-
-/* ---------- Admin: restored-draft notice ---------- */
-.admin-draft-note { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 0 0 1rem; padding: 0.65rem 0.9rem; background: #FFF6E0; border: 1px solid #EBD9A8; border-radius: 10px; font-size: 0.85rem; color: #6b5420; }
-
-
-/* ---------- Admin: price for each size ---------- */
-.size-price-list { display: grid; gap: 0.5rem; max-width: 360px; }
-.size-price-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.4rem 0.7rem; background: #FAF6EE; border: 1px solid #EBDDC4; border-radius: 10px; }
-.size-price-label { font-weight: 600; font-size: 0.9rem; min-width: 70px; }
-.size-price-input { display: flex; align-items: center; gap: 0.35rem; }
-.size-price-input .admin-input { width: 120px; padding-top: 0.4rem; padding-bottom: 0.4rem; }
+/* ---- Buy one, get one free ---- */
+.badge.gift { background: #2C2C2C; color: #E8D9C4; }
+.badge.badge-second { top: 48px; }
+.free-tag { display: inline-block; margin-left: 0.5rem; padding: 1px 8px; border-radius: 999px; background: #2C2C2C; color: #F5EFE0; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
+.drawer-bogo { padding: 0.9rem 1.4rem; background: #2C2C2C; color: #F5EFE0; font-size: 0.85rem; }
+.drawer-bogo p { margin: 0; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.drawer-bogo-gifts { display: flex; gap: 0.6rem; overflow-x: auto; margin-top: 0.7rem; padding-bottom: 2px; }
+.drawer-bogo-gifts a { flex: 0 0 72px; color: inherit; text-decoration: none; }
+.drawer-bogo-gifts img, .drawer-bogo-gifts span { display: block; width: 72px; height: 88px; object-fit: cover; border-radius: 8px; background: #4a4440; }
+.drawer-bogo-gifts em { display: block; font-style: normal; font-size: 0.7rem; line-height: 1.25; margin-top: 0.3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.drawer-row-tight { margin-bottom: 0.5rem; }
+.product-bogo-note { margin: -0.75rem 0 1.5rem; padding: 0.7rem 1rem; border-left: 3px solid #C9A876; background: #F8F2E8; font-size: 0.92rem; color: #4a4036; }
+.admin-gift-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 3px 6px 3px 3px; border: 1px solid #E8D9C4; border-radius: 999px; font-size: 0.8rem; background: #fff; }
+.admin-gift-chip img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+.admin-gift-chip button { background: none; border: none; cursor: pointer; font-size: 1rem; line-height: 1; color: #a5825a; padding: 0 2px; }
+.admin-gift-list { max-height: 320px; overflow-y: auto; border: 1px solid #E8D9C4; border-radius: 8px; }
+.admin-gift-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid #F0E6D6; cursor: pointer; }
+.admin-gift-row:last-child { border-bottom: none; }
+.admin-gift-row.is-on { background: #F8F2E8; }
+.admin-gift-row img, .admin-gift-ph { width: 36px; height: 44px; border-radius: 4px; object-fit: cover; background: #E8D9C4; flex-shrink: 0; }

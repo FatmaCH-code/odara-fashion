@@ -4,11 +4,12 @@ import { useCartStore } from '../store/cartStore'
 import { useProducts } from '../hooks/useProducts'
 import { useUiStore } from '../store/uiStore'
 import { buildCartItem, sizesFor } from '../utils/cartItem'
-import { priceForSize, priceFrom, fmtMoney } from '../utils/pricing'
 import ProductReviews from '../components/ProductReviews'
 import StarRating from '../components/StarRating'
 import { useReviews, summarize } from '../hooks/useReviews'
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { bogoActive, giftIdSet } from '../utils/bogo'
+import { isFashion } from '../utils/categories'
 
 export default function ProductPage() {
   const { id } = useParams()
@@ -109,14 +110,20 @@ export default function ProductPage() {
               <p className="product-category-label">{product.brand ? `${product.brand} · ${product.category}` : product.category}</p>
               <h1 className="text-4xl font-playfair text-2C2C2C mb-4">{product.name}</h1>
               <p className="text-3xl text-C9A876 font-semibold mb-6">
-                {!selectedSize && priceFrom(product) != null
-                  ? <>From ${fmtMoney(priceFrom(product))}</>
-                  : <>${fmtMoney(selectedSize ? priceForSize(product, selectedSize) : product.price)}</>}
-                {product.originalPrice && Object.keys(product.sizePrices || {}).length === 0 && (
+                ${product.price}
+                {product.originalPrice && (
                   <span className="ml-3 text-xl line-through text-2C2C2C/40">${product.originalPrice}</span>
                 )}
               </p>
               
+              {bogoActive(settings.bogo) && (giftIdSet(settings.bogo).has(Number(product.id)) || isFashion(product)) && (
+                <p className="product-bogo-note">
+                  {giftIdSet(settings.bogo).has(Number(product.id))
+                    ? <><strong>Free gift</strong> — this piece is free when you buy any other clothing item.</>
+                    : <><strong>Buy one, get one free</strong> — buy this and choose a free gift piece in your bag.</>}
+                </p>
+              )}
+
               <p className="text-lg text-2C2C2C/70 mb-8">{product.description}</p>
 
               {product.colors && product.colors.length > 0 && (

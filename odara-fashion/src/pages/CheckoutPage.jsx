@@ -6,6 +6,7 @@ import { createOrder } from '../services/orders'
 import { useSiteSettings } from '../hooks/useSiteSettings'
 import { shippingFor } from '../utils/pricing'
 import { validatePromo } from '../services/promo'
+import { useBogo } from '../hooks/useBogo'
 
 const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED === 'true'
 
@@ -48,12 +49,15 @@ export default function CheckoutPage() {
 
   useEffect(() => { try { sessionStorage.setItem(STORE_KEY, JSON.stringify(form)) } catch { /* private mode */ } }, [form])
 
+  const bogo = useBogo(items)
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
-  const discount = promo ? Math.round(subtotal * promo.percent) / 100 : 0
+  // Same order as the server: free gifts first, then the % code on what's left.
+  const afterBogo = subtotal - bogo.amount
+  const discount = promo ? Math.round(afterBogo * promo.percent) / 100 : 0
   const isUS = form.country === 'United States'
   // Shipping depends on how far the address is from Ohio (null until a US state is picked).
-  const shipping = shippingFor(subtotal - discount, settings.shipping, { country: form.country, state: isUS ? form.state : '' })
-  const total = subtotal - discount + (shipping || 0)
+  const shipping = shippingFor(afterBogo - discount, settings.shipping, { country: form.country, state: isUS ? form.state : '' })
+  const total = afterBogo - discount + (shipping || 0)
   const freeOver = Number(settings.shipping.freeOver || 0)
   const canFreeShip = freeOver > 0 && (settings.shipping.byZone !== false || Number(settings.shipping.flatFee || 0) > 0)
 
@@ -155,18 +159,27 @@ export default function CheckoutPage() {
             <div className={`checkout-summary-body ${summaryOpen ? 'is-open' : ''}`}>
               <h2 className="checkout-summary-title">Order summary</h2>
               <ul className="checkout-items">
-                {items.map(i => (
-                  <li key={getLineId(i)}>
-                    <span className="checkout-thumb">
-                      {i.image ? <img src={i.image} alt="" /> : null}
-                      <em>{i.quantity}</em>
-                    </span>
-                    <span className="checkout-item-name">{i.name}</span>
-                    <span>{money(i.price * i.quantity)}</span>
-                  </li>
-                ))}
+                {items.map(i => {
+                  const free = bogo.freeByLine[getLineId(i)] || 0
+                  return (
+                    <li key={getLineId(i)}>
+                      <span className="checkout-thumb">
+                        {i.image ? <img src={i.image} alt="" /> : null}
+                        <em>{i.quantity}</em>
+                      </span>
+                      <span className="checkout-item-name">
+                        {i.name}
+                        {free > 0 && <span className="free-tag">{free === i.quantity ? 'Free gift' : `${free} free`}</span>}
+                      </span>
+                      <span>{money(i.price * (i.quantity - free))}</span>
+                    </li>
+                  )
+                })}
               </ul>
 
+              {bogo.amount > 0 && (
+                <div className="checkout-row"><span>Buy one, get one free</span><span>−{money(bogo.amount)}</span></div>
+              )}
               {promo ? (
                 <div className="checkout-row">
                   <span>Discount ({promo.code}) <button type="button" className="promo-remove" onClick={() => setPromo(null)}>remove</button></span>
@@ -185,7 +198,7 @@ export default function CheckoutPage() {
               <div className="checkout-row"><span>Subtotal</span><span>{money(subtotal)}</span></div>
               <div className="checkout-row"><span>Shipping</span><span>{shipping === null ? 'Select your state' : shipping > 0 ? money(shipping) : 'Free'}</span></div>
               {canFreeShip && shipping !== 0 && (
-                <p className="checkout-hint">Add {money(freeOver - (subtotal - discount))} more for free shipping.</p>
+                <p className="checkout-hint">Add {money(freeOver - (afterBogo - discount))} more for free shipping.</p>
               )}
               <div className="checkout-row checkout-total"><span>Total</span><span>{money(total)}</span></div>
             </div>

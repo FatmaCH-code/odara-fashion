@@ -4,12 +4,15 @@ import { Plus } from 'lucide-react'
 import { useUiStore } from '../store/uiStore'
 import { useReviews, summarize } from '../hooks/useReviews'
 import StarRating from './StarRating'
-import { priceFrom, fmtMoney } from '../utils/pricing'
+import { useSiteSettings } from '../hooks/useSiteSettings'
+import { bogoActive, giftIdSet } from '../utils/bogo'
 
 export default function ProductCard({ product, isSale, isNew }) {
   const openQuickAdd = useUiStore(s => s.openQuickAdd)
   const [preview, setPreview] = useState(null) // hovering a color dot previews that color's photo
   const { reviews } = useReviews()
+  const { settings } = useSiteSettings()
+  const isGift = bogoActive(settings.bogo) && giftIdSet(settings.bogo).has(Number(product.id))
 
   const sale = isSale ?? product.isSale
   const fresh = isNew ?? product.isNew
@@ -19,6 +22,7 @@ export default function ProductCard({ product, isSale, isNew }) {
   return (
     <div className="product-card-premium">
       {badge && <div className={`badge ${badge[0]}`}>{badge[1]}</div>}
+      {isGift && <div className={`badge gift ${badge ? 'badge-second' : ''}`}>Free gift</div>}
 
       <div className="product-media">
         <Link to={`/product/${product.id}`} className="product-media-link" tabIndex={-1} aria-hidden="true">
@@ -50,8 +54,8 @@ export default function ProductCard({ product, isSale, isNew }) {
             </p>
           )}
           <p className="product-price-premium">
-            {priceFrom(product) != null ? <>From ${fmtMoney(priceFrom(product))}</> : <>${product.price}</>}
-            {product.originalPrice && Object.keys(product.sizePrices || {}).length === 0 && (
+            ${product.price}
+            {product.originalPrice && (
               <span className="ml-2 text-sm line-through text-2C2C2C/40">${product.originalPrice}</span>
             )}
           </p>

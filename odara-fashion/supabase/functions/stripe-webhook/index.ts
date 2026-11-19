@@ -37,6 +37,7 @@ interface OrderItem {
   quantity: number | string
   blend?: Record<string, string | number | null>
   recipe?: string[]
+  free_qty?: number | string   // units given free by "buy one get one free"
 }
 
 interface OrderRow {
@@ -93,12 +94,15 @@ function orderTable(order: OrderRow): string {
   const rows = (order.items || [])
     .map(
       (i) =>
-        `<tr><td style="padding:6px 0">${esc(i.name)} × ${esc(i.quantity)}${blendRecipe(i)}</td><td style="padding:6px 0;text-align:right;vertical-align:top">$${(Number(i.price) * Number(i.quantity)).toFixed(2)}</td></tr>`,
+        `<tr><td style="padding:6px 0">${esc(i.name)} × ${esc(i.quantity)}${Number(i.free_qty) > 0 ? ` <b style="color:#a5825a">(${esc(i.free_qty)} free)</b>` : ''}${blendRecipe(i)}</td><td style="padding:6px 0;text-align:right;vertical-align:top">$${(Number(i.price) * (Number(i.quantity) - (Number(i.free_qty) || 0))).toFixed(2)}</td></tr>`,
     )
     .join('')
+  // "Buy one get one free" is already taken off the item lines; the rest of discount_amount is the code.
+  const bogoAmount = (order.items || []).reduce((t, i) => t + (Number(i.free_qty) || 0) * Number(i.price), 0)
+  const codeAmount = Number(order.discount_amount || 0) - bogoAmount
   const discount =
-    order.discount_code && Number(order.discount_amount) > 0
-      ? `<tr><td style="padding:6px 0;color:#777">Discount (${esc(order.discount_code)})</td><td style="padding:6px 0;text-align:right;color:#777">−$${Number(order.discount_amount).toFixed(2)}</td></tr>`
+    order.discount_code && order.discount_code !== 'BOGO' && codeAmount > 0.004
+      ? `<tr><td style="padding:6px 0;color:#777">Discount (${esc(order.discount_code)})</td><td style="padding:6px 0;text-align:right;color:#777">−$${codeAmount.toFixed(2)}</td></tr>`
       : ''
   const shipping = Number(order.shipping_amount) > 0
     ? `<tr><td style="padding:6px 0;color:#777">Shipping</td><td style="padding:6px 0;text-align:right;color:#777">$${Number(order.shipping_amount).toFixed(2)}</td></tr>`

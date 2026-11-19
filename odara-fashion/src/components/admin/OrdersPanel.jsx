@@ -122,8 +122,11 @@ export default function OrdersPanel() {
                             {(o.items || []).map((it, i) => (
                               <div key={i} className="mb-2">
                                 <div className="flex justify-between text-sm">
-                                  <span>{it.name} × {it.quantity}</span>
-                                  <span>${(it.price * it.quantity).toFixed(2)}</span>
+                                  <span>
+                                    {it.name} × {it.quantity}
+                                    {Number(it.free_qty) > 0 && <span className="admin-badge admin-badge-new ml-2">{it.free_qty} free</span>}
+                                  </span>
+                                  <span>${(it.price * (it.quantity - (Number(it.free_qty) || 0))).toFixed(2)}</span>
                                 </div>
                                 {(it.recipe || it.blend) && (
                                   <p className="text-xs text-2C2C2C/60 mt-0.5">
@@ -138,12 +141,18 @@ export default function OrdersPanel() {
                                 <span>${Number(o.shipping_amount).toFixed(2)}</span>
                               </div>
                             )}
-                            {o.discount_code && (
-                              <div className="flex justify-between text-sm text-2C2C2C/60 mt-2">
-                                <span>Discount ({o.discount_code})</span>
-                                <span>−${Number(o.discount_amount || 0).toFixed(2)}</span>
-                              </div>
-                            )}
+                            {(() => {
+                              // "Buy one get one free" is already taken off the item lines above;
+                              // what's left of discount_amount is the % code.
+                              const bogo = (o.items || []).reduce((t, it) => t + (Number(it.free_qty) || 0) * Number(it.price), 0)
+                              const codeAmount = Number(o.discount_amount || 0) - bogo
+                              return o.discount_code && o.discount_code !== 'BOGO' && codeAmount > 0.004 ? (
+                                <div className="flex justify-between text-sm text-2C2C2C/60 mt-2">
+                                  <span>Discount ({o.discount_code})</span>
+                                  <span>−${codeAmount.toFixed(2)}</span>
+                                </div>
+                              ) : null
+                            })()}
                           </div>
                         </div>
                       </td>

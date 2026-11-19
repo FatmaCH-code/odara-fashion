@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Star } from 'lucide-react'
+import { Plus, Pencil, Trash2, Star, Download } from 'lucide-react'
 import { useAdminProducts } from '../../hooks/useAdminProducts'
 import ProductForm from './ProductForm'
 import MergeProductsModal from './MergeProductsModal'
 import { adminGetExtraCategories } from '../../services/categories'
+import { downloadProductsCsv } from '../../utils/productsCsv'
 
 export default function ProductsPanel() {
   const { products, loading, error, saveProduct, deleteProduct } = useAdminProducts()
@@ -92,6 +93,14 @@ export default function ProductsPanel() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <button
+            className="admin-btn-secondary flex items-center gap-2"
+            disabled={filtered.length === 0}
+            title={search ? 'Download the products matching your search' : 'Download every product with its details and photo links'}
+            onClick={() => downloadProductsCsv(filtered)}
+          >
+            <Download className="w-4 h-4" /> Export CSV{search ? ` (${filtered.length})` : ''}
+          </button>
           <button className="admin-btn-primary flex items-center gap-2" onClick={() => navigate('/admin/products/new')}>
             <Plus className="w-4 h-4" /> Add Product
           </button>

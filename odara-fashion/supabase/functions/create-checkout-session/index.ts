@@ -27,6 +27,7 @@ interface OrderItem {
   name: string
   price: number
   quantity: number
+  free_qty?: number   // units given free by "buy one get one free" (sql/bogo_offer.sql)
 }
 
 
@@ -119,9 +120,21 @@ Deno.serve(async (req: Request) => {
     }))
     const itemsCents = itemLines.reduce((sum, l) => sum + l.unit * l.qty, 0)
 
-    // The discount is built into the prices Stripe charges (see applyDiscount); shipping is its own line.
-    const discountNote = discountCents > 0 ? `${order.discount_code || 'Discount'} applied` : undefined
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = applyDiscount(itemLines, discountCents).map((l) => ({
+    // "Buy one get one free": the free units are simply not charged on Stripe.
+    const freeQty = orderItems.map((item) => Math.max(0, Math.min(Number(item.quantity), Number(item.free_qty) || 0)))
+    const bogoCents = itemLines.reduce((sum, l, i) => sum + l.unit * freeQty[i], 0)
+    const paidLines: Line[] = itemLines
+      .map((l, i) => ({ ...l, qty: l.qty - freeQty[i] }))
+      .filter((l) => l.qty > 0)
+    const freeNames = orderItems
+      .map((item, i) => (freeQty[i] > 0 ? `${item.name}${freeQty[i] > 1 ? ` ×${freeQty[i]}` : ''}` : ''))
+      .filter(Boolean)
+    const codeCents = discountCents - bogoCents
+    if (codeCents < 0) throw new Error('Order discount mismatch — payment not started.')
+
+    // The % code is built into the prices Stripe charges (see applyDiscount); shipping is its own line.
+    const discountNote = codeCents > 0 ? `${order.discount_code || 'Discount'} applied` : undefined
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = applyDiscount(paidLines, codeCents).map((l) => ({
       price_data: {
         currency: 'usd',
         product_data: discountNote ? { name: l.name, description: discountNote } : { name: l.name },
@@ -163,6 +176,12 @@ Deno.serve(async (req: Request) => {
       cancel_url: `${siteUrl}/checkout`,
       // Abandoned checkouts are marked "failed" ~35 minutes later (Stripe's minimum is 30).
       expires_at: Math.floor(Date.now() / 1000) + 35 * 60,
+    }
+    if (freeNames.length > 0) {
+      // Shown above the Pay button, so the customer sees their free gift is in the order.
+      sessionParams.custom_text = {
+        submit: { message: `Buy one, get one free — included free: ${freeNames.join(', ')}`.slice(0, 1200) },
+      }
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams)
